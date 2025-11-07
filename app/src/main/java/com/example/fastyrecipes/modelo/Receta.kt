@@ -1,13 +1,24 @@
-package com.example.fastyrecipes.Modelo
+package com.example.fastyrecipes.modelo
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.ColumnInfo
+
+@Entity(tableName = "recetas")
 data class Receta(
-    val id: Long? = null,
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
     val nombre: String,
     val descripcion: String,
+
+    @ColumnInfo(name = "tiempo_preparacion")
     val tiempoPreparacion: Int,
+
+    @ColumnInfo(name = "imagen_url")
     val imagenUrl: String? = null,
-    val ingredientes: List<Producto>,
-    val instrucciones: List<String>,
+
     val categoria: String,
+
+    @ColumnInfo(name = "es_favorita")
     val esFavorita: Boolean = false
 )

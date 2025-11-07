@@ -1,4 +1,4 @@
-package com.example.fastyrecipes.Modelo
+package com.example.fastyrecipes.modelo
 
 data class Usuario(
     val id: Long? = null,
