@@ -139,8 +139,8 @@ fun PantallaFavoritos(
                         items(recetasFavoritas) { receta ->
                             RecetaItemFavoritos(
                                 receta = receta,
-                                onToggleFavorito = { viewModel.toggleFavorito(receta) },
-                                onEliminar = { viewModel.eliminarReceta(receta) }
+                                onToggleFavorito = { viewModel.toggleFavorito(receta) }
+                                // Se eliminó el parámetro onEliminar
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -184,12 +184,12 @@ fun PantallaFavoritos(
     }
 }
 
-// Componente específico para favoritos
+// Componente específico para favoritos (sin botón de eliminar)
 @Composable
 fun RecetaItemFavoritos(
     receta: Receta,
-    onToggleFavorito: () -> Unit,
-    onEliminar: () -> Unit
+    onToggleFavorito: () -> Unit
+    // Se eliminó el parámetro onEliminar
 ) {
     Card(
         modifier = Modifier
@@ -244,25 +244,7 @@ fun RecetaItemFavoritos(
                 )
             }
 
-            // Botón de eliminar
-            Button(
-                onClick = onEliminar,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Eliminar Receta")
-            }
+            // Se eliminó completamente el botón de eliminar
         }
     }
 }
