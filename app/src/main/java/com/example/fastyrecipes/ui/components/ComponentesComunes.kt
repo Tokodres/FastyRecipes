@@ -132,10 +132,12 @@ fun RecetaCard(
     }
 }
 
+// En ComponentesComunes.kt - actualizar BottomNavigationBar
 @Composable
 fun BottomNavigationBar(
     currentScreen: String,
-    onNavigateToSearch: () -> Unit
+    onNavigateToSearch: () -> Unit,
+    onNavigateToFavoritos: () -> Unit  // <-- Agregar este parámetro
 ) {
     NavigationBar {
         NavigationBarItem(
@@ -154,7 +156,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Favorite, contentDescription = "Favoritos") },
             label = { Text("Favoritos") },
             selected = currentScreen == "favoritos",
-            onClick = { }
+            onClick = onNavigateToFavoritos  // <-- Usar el nuevo callback
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },

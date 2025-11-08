@@ -7,16 +7,15 @@ import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import com.example.fastyrecipes.controller.FastyController
 import com.example.fastyrecipes.ui.pantallas.PantallaBusqueda
+import com.example.fastyrecipes.ui.pantallas.PantallaFavoritos
 import com.example.fastyrecipes.ui.pantallas.PantallaPrincipal
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 import com.example.fastyrecipes.viewmodels.RecetasViewModelFactory
-import androidx.compose.runtime.remember
 
-
-// MainActivity.kt
 class MainActivity : ComponentActivity() {
 
     private val controller: FastyController by lazy {
@@ -37,11 +36,18 @@ class MainActivity : ComponentActivity() {
                 when (currentScreen) {
                     "inicio" -> PantallaPrincipal(
                         viewModel = viewModel,
-                        onNavigateToSearch = { currentScreen = "buscar" }
+                        onNavigateToSearch = { currentScreen = "buscar" },
+                        onNavigateToFavoritos = { currentScreen = "favoritos" }
                     )
                     "buscar" -> PantallaBusqueda(
                         viewModel = viewModel,
                         onBack = { currentScreen = "inicio" }
+                    )
+                    "favoritos" -> PantallaFavoritos(
+                        viewModel = viewModel,
+                        onBack = { currentScreen = "inicio" },
+                        onNavigateToSearch = { currentScreen = "buscar" },
+                        onNavigateToFavoritos = { currentScreen = "favoritos" }
                     )
                 }
             }

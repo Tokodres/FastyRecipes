@@ -28,7 +28,8 @@ import com.example.fastyrecipes.viewmodels.RecetasViewModel
 @Composable
 fun PantallaPrincipal(
     viewModel: RecetasViewModel,
-    onNavigateToSearch: () -> Unit
+    onNavigateToSearch: () -> Unit,
+    onNavigateToFavoritos: () -> Unit
 ) {
 
     val recetas by viewModel.recetas.collectAsStateWithLifecycle()
@@ -57,7 +58,8 @@ fun PantallaPrincipal(
         bottomBar = {
             BottomNavigationBar(
                 currentScreen = "inicio",
-                onNavigateToSearch = onNavigateToSearch
+                onNavigateToSearch = onNavigateToSearch,
+                onNavigateToFavoritos = onNavigateToFavoritos
             )
         },
         floatingActionButton = {
@@ -75,7 +77,7 @@ fun PantallaPrincipal(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Botón para recargar datos (restaurado)
+            // Botón para recargar datos
             Button(
                 onClick = { viewModel.recargarDatos() },
                 modifier = Modifier
@@ -110,7 +112,7 @@ fun PantallaPrincipal(
                         )
                     }
                 } else {
-                    // Lista de recetas con diseño original
+                    // Lista de recetas
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -132,7 +134,7 @@ fun PantallaPrincipal(
         // Mostrar errores
         error?.let { errorMessage ->
             LaunchedEffect(errorMessage) {
-                // Aquí podrías mostrar un Snackbar
+                // Podrías mostrar un Snackbar aquí
             }
         }
 
@@ -157,7 +159,6 @@ fun PantallaPrincipal(
     }
 }
 
-// Componente original de RecetaItem (con eliminar y favoritos)
 @Composable
 fun RecetaItemOriginal(
     receta: Receta,

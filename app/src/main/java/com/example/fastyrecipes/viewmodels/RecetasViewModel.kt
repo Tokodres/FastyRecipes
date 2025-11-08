@@ -68,6 +68,15 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         initialValue = emptyList()
     )
 
+    // Recetas favoritas
+    val recetasFavoritas: StateFlow<List<Receta>> = recetas.map { recetas ->
+        recetas.filter { it.esFavorita }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     init {
         cargarDatosIniciales()
     }
@@ -87,7 +96,8 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         }
     }
 
-    // Funciones para búsqueda y filtros
+    // ========== FUNCIONES DE BÚSQUEDA Y FILTROS ==========
+
     fun onSearchTextChange(text: String) {
         _searchText.value = text
     }
@@ -105,7 +115,28 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         _selectedCategory.value = null
     }
 
-    // Funciones de operaciones CRUD
+    // ========== FUNCIONES DE FAVORITOS ==========
+
+    fun obtenerFavoritas(): StateFlow<List<Receta>> = recetasFavoritas
+
+    fun limpiarTodosLosFavoritos() {
+        viewModelScope.launch {
+            try {
+                val todasRecetas = recetas.value
+                todasRecetas.forEach { receta ->
+                    if (receta.esFavorita) {
+                        controller.marcarComoFavorita(receta.id, false)
+                    }
+                }
+                _error.value = null
+            } catch (e: Exception) {
+                _error.value = "Error limpiando favoritos: ${e.message}"
+            }
+        }
+    }
+
+    // ========== FUNCIONES CRUD DE RECETAS ==========
+
     fun toggleFavorito(receta: Receta) {
         viewModelScope.launch {
             try {
@@ -170,5 +201,35 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
                 _error.value = "Error eliminando todas las recetas: ${e.message}"
             }
         }
+    }
+
+    // ========== FUNCIONES DE UTILIDAD ==========
+
+    fun obtenerRecetaPorId(id: Long): Receta? {
+        return recetas.value.find { it.id == id }
+    }
+
+    fun obtenerRecetasPorCategoria(categoria: String): List<Receta> {
+        return recetas.value.filter { it.categoria.equals(categoria, ignoreCase = true) }
+    }
+
+    fun contarRecetas(): Int {
+        return recetas.value.size
+    }
+
+    fun contarFavoritas(): Int {
+        return recetasFavoritas.value.size
+    }
+
+    fun tieneRecetas(): Boolean {
+        return recetas.value.isNotEmpty()
+    }
+
+    fun tieneFavoritas(): Boolean {
+        return recetasFavoritas.value.isNotEmpty()
+    }
+
+    fun limpiarErrores() {
+        _error.value = null
     }
 }
