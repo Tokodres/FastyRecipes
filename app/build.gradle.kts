@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.fastyrecipes"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.fastyrecipes"
