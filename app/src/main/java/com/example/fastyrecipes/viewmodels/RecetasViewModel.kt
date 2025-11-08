@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class RecetasViewModel(private val controller: FastyController) : ViewModel() {
@@ -21,12 +23,50 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
             initialValue = emptyList()
         )
 
-    // CORREGIDO: Usar StateFlow en lugar de mutableStateOf
+    // Estados de carga y error
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    // Estados para búsqueda y filtros
+    private val _searchText = MutableStateFlow("")
+    val searchText: StateFlow<String> = _searchText.asStateFlow()
+
+    private val _selectedCategory = MutableStateFlow<String?>(null)
+    val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
+
+    // Recetas filtradas por búsqueda y categoría
+    val recetasFiltradas: StateFlow<List<Receta>> = combine(
+        recetas,
+        _searchText,
+        _selectedCategory
+    ) { recetas, searchText, selectedCategory ->
+        recetas.filter { receta ->
+            val matchesSearch = searchText.isEmpty() ||
+                    receta.nombre.contains(searchText, ignoreCase = true) ||
+                    receta.descripcion.contains(searchText, ignoreCase = true)
+
+            val matchesCategory = selectedCategory == null ||
+                    receta.categoria.equals(selectedCategory, ignoreCase = true)
+
+            matchesSearch && matchesCategory
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    // Categorías únicas
+    val categoriasUnicas: StateFlow<List<String>> = recetas.map { recetas ->
+        recetas.map { it.categoria }.distinct()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     init {
         cargarDatosIniciales()
@@ -47,6 +87,25 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         }
     }
 
+    // Funciones para búsqueda y filtros
+    fun onSearchTextChange(text: String) {
+        _searchText.value = text
+    }
+
+    fun onCategorySelected(category: String?) {
+        _selectedCategory.value = category
+    }
+
+    fun buscarRecetas(termino: String) {
+        _searchText.value = termino
+    }
+
+    fun limpiarBusqueda() {
+        _searchText.value = ""
+        _selectedCategory.value = null
+    }
+
+    // Funciones de operaciones CRUD
     fun toggleFavorito(receta: Receta) {
         viewModelScope.launch {
             try {

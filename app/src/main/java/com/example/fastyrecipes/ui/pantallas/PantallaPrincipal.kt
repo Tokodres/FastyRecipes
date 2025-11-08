@@ -1,5 +1,6 @@
 package com.example.fastyrecipes.ui.pantallas
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,37 +10,60 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fastyrecipes.modelo.Receta
+import com.example.fastyrecipes.ui.components.BottomNavigationBar
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaPrincipal(viewModel: RecetasViewModel) {
+fun PantallaPrincipal(
+    viewModel: RecetasViewModel,
+    onNavigateToSearch: () -> Unit
+) {
 
-    // Estado observables del ViewModel - CORREGIDO CON TIPOS EXPLÍCITOS
-    val recetas: List<Receta> by viewModel.recetas.collectAsStateWithLifecycle()
-    val isLoading: Boolean by viewModel.isLoading.collectAsStateWithLifecycle()
-    val error: String? by viewModel.error.collectAsStateWithLifecycle()
+    val recetas by viewModel.recetas.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
 
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Fasty Recipes") }
+                title = {
+                    Text(
+                        "Fasty Recipes",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(Icons.Default.Search, contentDescription = "Buscar")
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                currentScreen = "inicio",
+                onNavigateToSearch = onNavigateToSearch
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true }
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar receta")
             }
@@ -49,19 +73,21 @@ fun PantallaPrincipal(viewModel: RecetasViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            // Botón para recargar
+            // Botón para recargar datos (restaurado)
             Button(
                 onClick = { viewModel.recargarDatos() },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
                 Icon(Icons.Default.Refresh, contentDescription = "Recargar")
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Recargar Datos")
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Estado de carga
             if (isLoading) {
@@ -78,28 +104,35 @@ fun PantallaPrincipal(viewModel: RecetasViewModel) {
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No hay recetas disponibles")
+                        Text(
+                            "No hay recetas disponibles",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 } else {
-                    // Lista de recetas
-                    LazyColumn {
+                    // Lista de recetas con diseño original
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                    ) {
                         items(recetas) { receta ->
-                            RecetaItem(
+                            RecetaItemOriginal(
                                 receta = receta,
                                 onToggleFavorito = { viewModel.toggleFavorito(receta) },
                                 onEliminar = { viewModel.eliminarReceta(receta) }
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
                 }
             }
         }
 
-        // Mostrar errores - CORREGIDO
+        // Mostrar errores
         error?.let { errorMessage ->
             LaunchedEffect(errorMessage) {
-                // Mostrar snackbar con el error
-                // Necesitarías un estado para controlar el Snackbar
+                // Aquí podrías mostrar un Snackbar
             }
         }
 
@@ -124,8 +157,9 @@ fun PantallaPrincipal(viewModel: RecetasViewModel) {
     }
 }
 
+// Componente original de RecetaItem (con eliminar y favoritos)
 @Composable
-fun RecetaItem(
+fun RecetaItemOriginal(
     receta: Receta,
     onToggleFavorito: () -> Unit,
     onEliminar: () -> Unit
@@ -138,7 +172,8 @@ fun RecetaItem(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = receta.nombre,
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
             Text(
                 text = receta.descripcion,
@@ -152,14 +187,21 @@ fun RecetaItem(
                 Text("Categoría: ${receta.categoria}")
             }
             Row {
+                // Botón de favorito
                 IconButton(onClick = onToggleFavorito) {
                     Icon(
                         if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorito"
+                        contentDescription = "Favorito",
+                        tint = if (receta.esFavorita) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                     )
                 }
+                // Botón de eliminar
                 IconButton(onClick = onEliminar) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Eliminar",
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
             }
         }

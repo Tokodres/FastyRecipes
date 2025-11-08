@@ -4,20 +4,25 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.example.fastyrecipes.controller.FastyController
+import com.example.fastyrecipes.ui.pantallas.PantallaBusqueda
 import com.example.fastyrecipes.ui.pantallas.PantallaPrincipal
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 import com.example.fastyrecipes.viewmodels.RecetasViewModelFactory
+import androidx.compose.runtime.remember
 
+
+// MainActivity.kt
 class MainActivity : ComponentActivity() {
 
-    // Instancia del controller
     private val controller: FastyController by lazy {
         FastyController(applicationContext)
     }
 
-    // ViewModel con Factory
     private val viewModel: RecetasViewModel by viewModels {
         RecetasViewModelFactory(controller)
     }
@@ -27,7 +32,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             FastyRecipesTheme {
-                PantallaPrincipal(viewModel = viewModel)
+                var currentScreen by remember { mutableStateOf("inicio") }
+
+                when (currentScreen) {
+                    "inicio" -> PantallaPrincipal(
+                        viewModel = viewModel,
+                        onNavigateToSearch = { currentScreen = "buscar" }
+                    )
+                    "buscar" -> PantallaBusqueda(
+                        viewModel = viewModel,
+                        onBack = { currentScreen = "inicio" }
+                    )
+                }
             }
         }
     }

@@ -1,4 +1,3 @@
-// RecetasViewModelFactory.kt (igual que antes)
 package com.example.fastyrecipes.viewmodels
 
 import androidx.lifecycle.ViewModel
