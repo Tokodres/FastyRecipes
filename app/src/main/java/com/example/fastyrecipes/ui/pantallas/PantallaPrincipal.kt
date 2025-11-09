@@ -29,7 +29,8 @@ import com.example.fastyrecipes.viewmodels.RecetasViewModel
 fun PantallaPrincipal(
     viewModel: RecetasViewModel,
     onNavigateToSearch: () -> Unit,
-    onNavigateToFavoritos: () -> Unit
+    onNavigateToFavoritos: () -> Unit,
+    onNavigateToPerfil: () -> Unit  // <-- AGREGAR ESTE PARÁMETRO
 ) {
 
     val recetas by viewModel.recetas.collectAsStateWithLifecycle()
@@ -59,7 +60,8 @@ fun PantallaPrincipal(
             BottomNavigationBar(
                 currentScreen = "inicio",
                 onNavigateToSearch = onNavigateToSearch,
-                onNavigateToFavoritos = onNavigateToFavoritos
+                onNavigateToFavoritos = onNavigateToFavoritos,
+                onNavigateToPerfil = onNavigateToPerfil  // <-- PASAR EL PARÁMETRO
             )
         },
         floatingActionButton = {
@@ -106,12 +108,39 @@ fun PantallaPrincipal(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            "No hay recetas disponibles",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Default.FavoriteBorder,
+                                contentDescription = "Sin recetas",
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "No hay recetas disponibles",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                "Agrega algunas recetas para comenzar",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 } else {
+                    // Contador de recetas
+                    Text(
+                        text = "Tienes ${recetas.size} recetas",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+
                     // Lista de recetas
                     LazyColumn(
                         modifier = Modifier
@@ -134,7 +163,7 @@ fun PantallaPrincipal(
         // Mostrar errores
         error?.let { errorMessage ->
             LaunchedEffect(errorMessage) {
-                // Podrías mostrar un Snackbar aquí
+                // Aquí podrías mostrar un Snackbar
             }
         }
 
@@ -159,6 +188,7 @@ fun PantallaPrincipal(
     }
 }
 
+// Componente original de RecetaItem (con eliminar y favoritos)
 @Composable
 fun RecetaItemOriginal(
     receta: Receta,
@@ -168,41 +198,91 @@ fun RecetaItemOriginal(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (receta.esFavorita) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = receta.nombre,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            // Header con nombre y botón de favorito
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = receta.nombre,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Botón de favorito
+                IconButton(
+                    onClick = onToggleFavorito,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (receta.esFavorita) "Quitar de favoritos" else "Agregar a favoritos",
+                        tint = if (receta.esFavorita) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            // Descripción
             Text(
                 text = receta.descripcion,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
+
+            // Información de tiempo y categoría
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Tiempo: ${receta.tiempoPreparacion} min")
-                Text("Categoría: ${receta.categoria}")
+                Text(
+                    text = "⏱ ${receta.tiempoPreparacion} min",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "📁 ${receta.categoria}",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
+                )
             }
-            Row {
-                // Botón de favorito
-                IconButton(onClick = onToggleFavorito) {
-                    Icon(
-                        if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favorito",
-                        tint = if (receta.esFavorita) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                    )
-                }
+
+            // Botones de acción
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            ) {
                 // Botón de eliminar
-                IconButton(onClick = onEliminar) {
+                Button(
+                    onClick = onEliminar,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier.height(36.dp)
+                ) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Eliminar",
-                        tint = MaterialTheme.colorScheme.error
+                        modifier = Modifier.size(18.dp)
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Eliminar")
                 }
             }
         }
@@ -220,29 +300,42 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String) -> Unit) {
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
-            label = { Text("Nombre") },
+            label = { Text("Nombre de la receta") },
+            placeholder = { Text("Ej: Pollo al horno") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = descripcion,
             onValueChange = { descripcion = it },
             label = { Text("Descripción") },
+            placeholder = { Text("Ej: Delicioso pollo horneado con especias") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = tiempo,
             onValueChange = { tiempo = it },
-            label = { Text("Tiempo (minutos)") },
+            label = { Text("Tiempo de preparación (minutos)") },
+            placeholder = { Text("Ej: 45") },
             modifier = Modifier.fillMaxWidth()
         )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         OutlinedTextField(
             value = categoria,
             onValueChange = { categoria = it },
             label = { Text("Categoría") },
+            placeholder = { Text("Ej: Cena, Postre, Ensalada") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
@@ -251,9 +344,12 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String) -> Unit) {
                     onAgregar(nombre, descripcion, tiempoInt, categoria)
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            enabled = nombre.isNotEmpty() && descripcion.isNotEmpty() && tiempo.toIntOrNull() ?: 0 > 0 && categoria.isNotEmpty()
         ) {
-            Text("Agregar Receta")
+            Text("Agregar Receta", style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -262,6 +358,7 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String) -> Unit) {
 @Composable
 fun PreviewPantallaPrincipal() {
     FastyRecipesTheme {
-        // PantallaPrincipal(viewModel = ...)
+        // Para el preview necesitarías un ViewModel mock
+        // PantallaPrincipal(viewModel = mockViewModel, onNavigateToSearch = {}, onNavigateToFavoritos = {}, onNavigateToPerfil = {})
     }
 }

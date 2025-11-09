@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import com.example.fastyrecipes.controller.FastyController
 import com.example.fastyrecipes.ui.pantallas.PantallaBusqueda
 import com.example.fastyrecipes.ui.pantallas.PantallaFavoritos
+import com.example.fastyrecipes.ui.pantallas.PantallaPerfil
 import com.example.fastyrecipes.ui.pantallas.PantallaPrincipal
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
@@ -37,7 +38,8 @@ class MainActivity : ComponentActivity() {
                     "inicio" -> PantallaPrincipal(
                         viewModel = viewModel,
                         onNavigateToSearch = { currentScreen = "buscar" },
-                        onNavigateToFavoritos = { currentScreen = "favoritos" }
+                        onNavigateToFavoritos = { currentScreen = "favoritos" },
+                        onNavigateToPerfil = { currentScreen = "perfil" }
                     )
                     "buscar" -> PantallaBusqueda(
                         viewModel = viewModel,
@@ -47,7 +49,15 @@ class MainActivity : ComponentActivity() {
                         viewModel = viewModel,
                         onBack = { currentScreen = "inicio" },
                         onNavigateToSearch = { currentScreen = "buscar" },
-                        onNavigateToFavoritos = { currentScreen = "favoritos" }
+                        onNavigateToFavoritos = { currentScreen = "favoritos" },
+                        onNavigateToPerfil = { currentScreen = "perfil" }
+                    )
+                    "perfil" -> PantallaPerfil(
+                        viewModel = viewModel,
+                        onBack = { currentScreen = "inicio" },
+                        onNavigateToSearch = { currentScreen = "buscar" },
+                        onNavigateToFavoritos = { currentScreen = "favoritos" },
+                        onNavigateToPerfil = { currentScreen = "perfil" }
                     )
                 }
             }

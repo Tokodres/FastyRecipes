@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
@@ -28,14 +27,13 @@ fun PantallaFavoritos(
     viewModel: RecetasViewModel,
     onBack: () -> Unit,
     onNavigateToSearch: () -> Unit,
-    onNavigateToFavoritos: () -> Unit
+    onNavigateToFavoritos: () -> Unit,
+    onNavigateToPerfil: () -> Unit  // <-- AGREGAR ESTE PARÁMETRO
 ) {
 
     val recetasFavoritas by viewModel.recetasFavoritas.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
-
-    var showClearFavoritesDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -51,20 +49,6 @@ fun PantallaFavoritos(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
-                },
-                actions = {
-                    // Botón para limpiar todos los favoritos (solo si hay favoritos)
-                    if (recetasFavoritas.isNotEmpty()) {
-                        IconButton(
-                            onClick = { showClearFavoritesDialog = true }
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Limpiar todos los favoritos",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
                 }
             )
         },
@@ -72,7 +56,8 @@ fun PantallaFavoritos(
             BottomNavigationBar(
                 currentScreen = "favoritos",
                 onNavigateToSearch = onNavigateToSearch,
-                onNavigateToFavoritos = onNavigateToFavoritos
+                onNavigateToFavoritos = onNavigateToFavoritos,
+                onNavigateToPerfil = onNavigateToPerfil  // <-- PASAR EL PARÁMETRO
             )
         }
     ) { paddingValues ->
@@ -140,7 +125,6 @@ fun PantallaFavoritos(
                             RecetaItemFavoritos(
                                 receta = receta,
                                 onToggleFavorito = { viewModel.toggleFavorito(receta) }
-                                // Se eliminó el parámetro onEliminar
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -155,32 +139,6 @@ fun PantallaFavoritos(
                 // Podrías mostrar un Snackbar aquí
             }
         }
-
-        // Dialog para limpiar todos los favoritos
-        if (showClearFavoritesDialog) {
-            AlertDialog(
-                onDismissRequest = { showClearFavoritesDialog = false },
-                title = { Text("Limpiar todos los favoritos") },
-                text = {
-                    Text("¿Estás seguro de que quieres quitar todas las recetas de favoritos? Esta acción no se puede deshacer.")
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.limpiarTodosLosFavoritos()
-                            showClearFavoritesDialog = false
-                        }
-                    ) {
-                        Text("Limpiar", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showClearFavoritesDialog = false }) {
-                        Text("Cancelar")
-                    }
-                }
-            )
-        }
     }
 }
 
@@ -189,7 +147,6 @@ fun PantallaFavoritos(
 fun RecetaItemFavoritos(
     receta: Receta,
     onToggleFavorito: () -> Unit
-    // Se eliminó el parámetro onEliminar
 ) {
     Card(
         modifier = Modifier
@@ -243,8 +200,6 @@ fun RecetaItemFavoritos(
                     fontWeight = FontWeight.Medium
                 )
             }
-
-            // Se eliminó completamente el botón de eliminar
         }
     }
 }
@@ -257,7 +212,8 @@ fun PreviewPantallaFavoritos() {
         //     viewModel = ...,
         //     onBack = {},
         //     onNavigateToSearch = {},
-        //     onNavigateToFavoritos = {}
+        //     onNavigateToFavoritos = {},
+        //     onNavigateToPerfil = {}
         // )
     }
 }

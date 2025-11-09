@@ -11,7 +11,7 @@ import com.example.fastyrecipes.modelo.Receta
 
 @Database(
     entities = [Receta::class, Producto::class],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class FastyRecipesDatabase : RoomDatabase() {
