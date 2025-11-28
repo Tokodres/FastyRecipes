@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "526300137786",
+    "project_id": "fastyrecipes-bc6b0",
+    "storage_bucket": "fastyrecipes-bc6b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526300137786:android:209c2aa531ea6bbd6f6803",
+        "android_client_info": {
+          "package_name": "com.example.fastyrecipes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCA5X2xCpJgZ1cU9CY7i6Toqgvjjsy9Wac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

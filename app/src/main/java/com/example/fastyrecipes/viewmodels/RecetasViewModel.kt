@@ -2,7 +2,7 @@ package com.example.fastyrecipes.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fastyrecipes.controller.FastyController
+import com.example.fastyrecipes.controller.FirebaseController
 import com.example.fastyrecipes.modelo.Receta
 import com.example.fastyrecipes.modelo.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,10 +14,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-class RecetasViewModel(private val controller: FastyController) : ViewModel() {
+class RecetasViewModel(private val firebaseController: FirebaseController) : ViewModel() {
 
-    // Flow que observa cambios en tiempo real de la base de datos
-    val recetas = controller.obtenerTodasLasRecetas()
+    // Flow que observa cambios en tiempo real de Firebase Firestore
+    val recetas = firebaseController.obtenerTodasLasRecetas()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -94,8 +94,8 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                // Cargar datos iniciales en la base de datos
-                controller.cargarDatosIniciales()
+                // Cargar datos iniciales en Firebase
+                firebaseController.cargarDatosIniciales()
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Error inicializando datos: ${e.message}"
@@ -115,8 +115,8 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         _selectedCategory.value = category
     }
 
-    fun buscarRecetas(termino: String) {
-        _searchText.value = termino
+    fun buscarRecetas(query: String) {
+        _searchText.value = query
     }
 
     fun limpiarBusqueda() {
@@ -134,7 +134,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
                 val todasRecetas = recetas.value
                 todasRecetas.forEach { receta ->
                     if (receta.esFavorita) {
-                        controller.marcarComoFavorita(receta.id, false)
+                        firebaseController.marcarComoFavorita(receta.id, false)
                     }
                 }
                 _error.value = null
@@ -149,7 +149,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
     fun toggleFavorito(receta: Receta) {
         viewModelScope.launch {
             try {
-                controller.marcarComoFavorita(receta.id, !receta.esFavorita)
+                firebaseController.marcarComoFavorita(receta.id, !receta.esFavorita)
             } catch (e: Exception) {
                 _error.value = "Error actualizando favorito: ${e.message}"
             }
@@ -165,7 +165,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
                     tiempoPreparacion = tiempo,
                     categoria = categoria
                 )
-                controller.insertarReceta(nuevaReceta)
+                firebaseController.insertarReceta(nuevaReceta)
             } catch (e: Exception) {
                 _error.value = "Error agregando receta: ${e.message}"
             }
@@ -176,7 +176,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                controller.cargarDatosIniciales()
+                firebaseController.cargarDatosIniciales()
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Error recargando datos: ${e.message}"
@@ -189,7 +189,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
     fun eliminarReceta(receta: Receta) {
         viewModelScope.launch {
             try {
-                controller.eliminarReceta(receta)
+                firebaseController.eliminarReceta(receta.id)
                 _error.value = null
             } catch (e: Exception) {
                 _error.value = "Error eliminando receta: ${e.message}"
@@ -203,7 +203,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
                 // Obtener todas las recetas y eliminarlas una por una
                 val todasRecetas = recetas.value
                 todasRecetas.forEach { receta ->
-                    controller.eliminarReceta(receta)
+                    firebaseController.eliminarReceta(receta.id)
                 }
                 _error.value = null
             } catch (e: Exception) {
@@ -279,7 +279,7 @@ class RecetasViewModel(private val controller: FastyController) : ViewModel() {
 
     // ========== FUNCIONES DE UTILIDAD ==========
 
-    fun obtenerRecetaPorId(id: Long): Receta? {
+    fun obtenerRecetaPorId(id: String): Receta? {
         return recetas.value.find { it.id == id }
     }
 
