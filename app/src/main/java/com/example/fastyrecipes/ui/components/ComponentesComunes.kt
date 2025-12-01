@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fastyrecipes.modelo.Receta
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,13 +53,17 @@ fun RecetaCard(
         modifier = Modifier
             .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        onClick = onVerReceta
     ) {
         Column {
-            // Imagen de la receta (URL o placeholder)
+            // Imagen de la receta - OCUPANDO MÁS ESPACIO
             RecetaImage(
                 imageUrl = receta.imagenUrl,
-                contentDescription = "Imagen de ${receta.nombre}"
+                contentDescription = "Imagen de ${receta.nombre}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(250.dp) // Más alto para mejor visualización
             )
 
             Column(
@@ -67,7 +72,9 @@ fun RecetaCard(
                 Text(
                     text = receta.nombre,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -76,7 +83,8 @@ fun RecetaCard(
                     text = receta.descripcion,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -106,7 +114,7 @@ fun RecetaCard(
                         // Botón de favorito
                         IconButton(
                             onClick = onToggleFavorito,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -120,7 +128,6 @@ fun RecetaCard(
         }
     }
 }
-
 @Composable
 fun BottomNavigationBar(
     currentScreen: String,

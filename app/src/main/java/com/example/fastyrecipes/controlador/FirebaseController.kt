@@ -25,38 +25,43 @@ class FirebaseController {
 
             val recetas = snapshot?.documents?.mapNotNull { document ->
                 try {
-                    val receta = document.toObject(Receta::class.java)?.copy(id = document.id)
+                    // DEBUG EXTENDIDO: Ver qué campos tiene el documento
+                    println("📄 DEBUG Firestore - Documento ID: ${document.id}")
+                    println("   - Campos disponibles: ${document.data?.keys}")
+                    println("   - imagen_url raw: '${document.getString("imagen_url")}'")
 
-                    // DEBUG MEJORADO: Verificar cada receta cargada
-                    println("🔥 DEBUG FirebaseController - Receta cargada:")
-                    println("   - ID: ${receta?.id}")
-                    println("   - Nombre: ${receta?.nombre}")
-                    println("   - URL: '${receta?.imagenUrl}'")
-                    println("   - ¿URL null?: ${receta?.imagenUrl == null}")
-                    println("   - ¿URL empty?: ${receta?.imagenUrl?.isEmpty() ?: true}")
+                    val receta = Receta(
+                        id = document.id,
+                        nombre = document.getString("nombre") ?: "",
+                        descripcion = document.getString("descripcion") ?: "",
+                        tiempoPreparacion = document.getLong("tiempo_preparacion")?.toInt() ?: 0,
+                        categoria = document.getString("categoria") ?: "",
+                        esFavorita = document.getBoolean("es_favorita") ?: false,
+                        imagenUrl = document.getString("imagen_url") // ← ESTA ES LA CLAVE
+                    )
 
+                    println("   - Receta mapeada - imagenUrl: '${receta.imagenUrl}'")
                     receta
                 } catch (e: Exception) {
-                    println("❌ ERROR mapeando receta: ${e.message}")
+                    println("❌ ERROR mapeando receta ${document.id}: ${e.message}")
                     null
                 }
             } ?: emptyList()
 
-            // DEBUG: Resumen de carga
-            println("📊 RESUMEN FirebaseController:")
-            println("   - Total recetas cargadas: ${recetas.size}")
-            println("   - Recetas con URL: ${recetas.count { !it.imagenUrl.isNullOrEmpty() }}")
-            println("   - Recetas sin URL: ${recetas.count { it.imagenUrl.isNullOrEmpty() }}")
+            // DEBUG: Resumen final
+            println("📊 RESUMEN Firestore - Recetas cargadas: ${recetas.size}")
+            recetas.forEach { receta ->
+                println("   - ${receta.nombre}: imagenUrl = '${receta.imagenUrl}'")
+            }
 
             trySend(recetas)
         }
 
         awaitClose {
-            println("🛑 FirebaseController - Cerrando listener")
+            println("🛑 Firestore - Cerrando listener")
             listener.remove()
         }
     }
-
     // Obtener recetas por categoría en tiempo real
     fun obtenerRecetasPorCategoria(categoria: String): Flow<List<Receta>> = callbackFlow {
         val listener = recetasCollection

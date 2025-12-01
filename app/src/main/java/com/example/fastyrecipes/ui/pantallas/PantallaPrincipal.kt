@@ -35,6 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.ui.text.style.TextAlign
 import coil.compose.SubcomposeAsyncImage
@@ -209,119 +210,143 @@ fun RecetaImage(
     modifier: Modifier = Modifier,
     contentDescription: String = "Imagen de receta"
 ) {
-    // DEBUG DETALLADO
+    // Estado para controlar la visibilidad de la imagen
+    var isLoading by remember { mutableStateOf(true) }
+    var hasError by remember { mutableStateOf(false) }
+
+    // DEBUG
     LaunchedEffect(imageUrl) {
-        println("🎯 DEBUG RecetaImage - URL recibida:")
-        println("   - Valor: '$imageUrl'")
-        println("   - Es null: ${imageUrl == null}")
-        println("   - Es empty: ${imageUrl?.isEmpty() ?: true}")
-        println("   - Longitud: ${imageUrl?.length ?: 0}")
+        println("🎯 DEBUG RecetaImage:")
+        println("   - URL: '$imageUrl'")
+        println("   - ¿Es null?: ${imageUrl == null}")
+        println("   - ¿Está vacía?: ${imageUrl?.isEmpty() ?: true}")
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp)
-            .background(
-                when {
-                    imageUrl == null -> Color.Red
-                    imageUrl.isEmpty() -> Color.Yellow
-                    else -> Color(0xFF4CAF50) // Verde
-                }
-            ),
+            .height(200.dp),
         contentAlignment = Alignment.Center
     ) {
         when {
-            imageUrl == null -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("❌ URL ES NULL", color = Color.White, textAlign = TextAlign.Center)
-                    Text("Firestore devolvió null", color = Color.White, textAlign = TextAlign.Center)
-                    Text("Verifica ViewModel/Firestore", color = Color.White, textAlign = TextAlign.Center)
-                }
-            }
-            imageUrl.isEmpty() -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("⚠️ URL VACÍA", color = Color.Black, textAlign = TextAlign.Center)
-                    Text("Firestore: ''", color = Color.Black, textAlign = TextAlign.Center)
-                    Text("URL se guardó vacía", color = Color.Black, textAlign = TextAlign.Center)
+            imageUrl.isNullOrEmpty() -> {
+                // Sin URL - placeholder
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF5F5F5)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Default.Image,
+                            contentDescription = "Sin imagen",
+                            modifier = Modifier.size(48.dp),
+                            tint = Color(0xFF666666)
+                        )
+                        Text(
+                            text = "Imagen no disponible",
+                            color = Color(0xFF666666),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             }
             else -> {
-                // INTENTAR CARGAR LA IMAGEN CON SUBCOMPOSEASYNCIMAGE
+                // CON URL - Cargar imagen
                 SubcomposeAsyncImage(
                     model = imageUrl,
                     contentDescription = contentDescription,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth(),
                     loading = {
-                        // Mientras carga
+                        isLoading = true
+                        hasError = false
+                        // Estado de carga - MÁS VISIBLE
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.3f)),
+                                .background(Color(0xFF2196F3)), // AZUL para que sea visible
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 CircularProgressIndicator(
                                     color = Color.White,
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier.size(50.dp)
                                 )
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "Cargando imagen...",
+                                    text = "CARGANDO IMAGEN",
                                     color = Color.White,
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "URL: ${imageUrl.take(25)}...",
+                                    text = "URL: ${imageUrl.take(30)}...",
                                     color = Color.White,
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
                     },
-                    error = {
-                        // Si hay error en la carga
+                    error = { state ->
+                        isLoading = false
+                        hasError = true
+
+                        // DEBUG del error
+                        println("❌ ERROR COIL:")
+                        println("   - URL: $imageUrl")
+                        println("   - Error: ${state.result?.throwable?.localizedMessage}")
+
                         Box(
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color(0xFFF44336)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.ErrorOutline,
+                                    contentDescription = "Error",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(50.dp)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
                                 Text(
-                                    text = "❌ ERROR COIL",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
+                                    text = "ERROR CARGANDO IMAGEN",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "No se pudo cargar la imagen",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "URL: ${imageUrl.take(20)}...",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "Verifica internet/URL",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
+                                    text = "Verifica la URL e internet",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
                     },
                     success = {
-                        // Debug cuando carga exitosamente
-                        println("✅ DEBUG: Imagen cargada EXITOSAMENTE desde: $imageUrl")
+                        isLoading = false
+                        hasError = false
+                        println("✅✅✅ IMAGEN CARGADA EXITOSAMENTE: $imageUrl")
                     }
                 )
+
+                // Si está cargando, mostrar también el indicador encima
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(60.dp)
+                        )
+                    }
+                }
             }
         }
     }

@@ -6,17 +6,14 @@ data class Receta(
     val id: String = "",
     val nombre: String = "",
     val descripcion: String = "",
-
     @PropertyName("tiempo_preparacion")
     val tiempoPreparacion: Int = 0,
-
     @PropertyName("imagen_url")
     val imagenUrl: String? = null,
-
     val categoria: String = "",
-
     @PropertyName("es_favorita")
     val esFavorita: Boolean = false
 ) {
+    // Constructor alternativo CORREGIDO
     constructor() : this("", "", "", 0, null, "", false)
 }
