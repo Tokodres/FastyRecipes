@@ -18,6 +18,5 @@ data class Receta(
     @PropertyName("es_favorita")
     val esFavorita: Boolean = false
 ) {
-    // Constructor sin parámetros requerido por Firestore
     constructor() : this("", "", "", 0, null, "", false)
 }

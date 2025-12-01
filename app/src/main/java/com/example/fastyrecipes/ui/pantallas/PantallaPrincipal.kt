@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,20 @@ import com.example.fastyrecipes.modelo.Receta
 import com.example.fastyrecipes.ui.components.BottomNavigationBar
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.ui.text.style.TextAlign
+import coil.compose.SubcomposeAsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,7 +45,7 @@ fun PantallaPrincipal(
     viewModel: RecetasViewModel,
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
-    onNavigateToPerfil: () -> Unit  // <-- AGREGAR ESTE PARÁMETRO
+    onNavigateToPerfil: () -> Unit
 ) {
 
     val recetas by viewModel.recetas.collectAsStateWithLifecycle()
@@ -61,7 +76,7 @@ fun PantallaPrincipal(
                 currentScreen = "inicio",
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToFavoritos = onNavigateToFavoritos,
-                onNavigateToPerfil = onNavigateToPerfil  // <-- PASAR EL PARÁMETRO
+                onNavigateToPerfil = onNavigateToPerfil
             )
         },
         floatingActionButton = {
@@ -173,8 +188,8 @@ fun PantallaPrincipal(
                 onDismissRequest = { showAddDialog = false },
                 title = { Text("Agregar Nueva Receta") },
                 text = {
-                    AgregarRecetaForm { nombre, descripcion, tiempo, categoria ->
-                        viewModel.agregarReceta(nombre, descripcion, tiempo, categoria)
+                    AgregarRecetaForm { nombre, descripcion, tiempo, categoria, imagenUrl ->
+                        viewModel.agregarReceta(nombre, descripcion, tiempo, categoria, imagenUrl)
                         showAddDialog = false
                     }
                 },
@@ -184,6 +199,130 @@ fun PantallaPrincipal(
                     }
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun RecetaImage(
+    imageUrl: String?,
+    modifier: Modifier = Modifier,
+    contentDescription: String = "Imagen de receta"
+) {
+    // DEBUG DETALLADO
+    LaunchedEffect(imageUrl) {
+        println("🎯 DEBUG RecetaImage - URL recibida:")
+        println("   - Valor: '$imageUrl'")
+        println("   - Es null: ${imageUrl == null}")
+        println("   - Es empty: ${imageUrl?.isEmpty() ?: true}")
+        println("   - Longitud: ${imageUrl?.length ?: 0}")
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(200.dp)
+            .background(
+                when {
+                    imageUrl == null -> Color.Red
+                    imageUrl.isEmpty() -> Color.Yellow
+                    else -> Color(0xFF4CAF50) // Verde
+                }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            imageUrl == null -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("❌ URL ES NULL", color = Color.White, textAlign = TextAlign.Center)
+                    Text("Firestore devolvió null", color = Color.White, textAlign = TextAlign.Center)
+                    Text("Verifica ViewModel/Firestore", color = Color.White, textAlign = TextAlign.Center)
+                }
+            }
+            imageUrl.isEmpty() -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⚠️ URL VACÍA", color = Color.Black, textAlign = TextAlign.Center)
+                    Text("Firestore: ''", color = Color.Black, textAlign = TextAlign.Center)
+                    Text("URL se guardó vacía", color = Color.Black, textAlign = TextAlign.Center)
+                }
+            }
+            else -> {
+                // INTENTAR CARGAR LA IMAGEN CON SUBCOMPOSEASYNCIMAGE
+                SubcomposeAsyncImage(
+                    model = imageUrl,
+                    contentDescription = contentDescription,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth(),
+                    loading = {
+                        // Mientras carga
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                CircularProgressIndicator(
+                                    color = Color.White,
+                                    modifier = Modifier.size(40.dp)
+                                )
+                                Text(
+                                    text = "Cargando imagen...",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    text = "URL: ${imageUrl.take(25)}...",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    },
+                    error = {
+                        // Si hay error en la carga
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "❌ ERROR COIL",
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "No se pudo cargar la imagen",
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "URL: ${imageUrl.take(20)}...",
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Verifica internet/URL",
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    },
+                    success = {
+                        // Debug cuando carga exitosamente
+                        println("✅ DEBUG: Imagen cargada EXITOSAMENTE desde: $imageUrl")
+                    }
+                )
+            }
         }
     }
 }
@@ -208,81 +347,92 @@ fun RecetaItemOriginal(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header con nombre y botón de favorito
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = receta.nombre,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Botón de favorito
-                IconButton(
-                    onClick = onToggleFavorito,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = if (receta.esFavorita) "Quitar de favoritos" else "Agregar a favoritos",
-                        tint = if (receta.esFavorita) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            // Descripción
-            Text(
-                text = receta.descripcion,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-
-            // Información de tiempo y categoría
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "⏱ ${receta.tiempoPreparacion} min",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "📁 ${receta.categoria}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            // Botones de acción
-            Row(
-                horizontalArrangement = Arrangement.End,
+        Column {
+            // Imagen de la receta
+            RecetaImage(
+                imageUrl = receta.imagenUrl,
+                contentDescription = "Imagen de ${receta.nombre}",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                // Botón de eliminar
-                Button(
-                    onClick = onEliminar,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    modifier = Modifier.height(36.dp)
+                    .height(200.dp)
+            )
+
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Header con nombre y botón de favorito
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Eliminar",
-                        modifier = Modifier.size(18.dp)
+                    Text(
+                        text = receta.nombre,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Eliminar")
+
+                    // Botón de favorito
+                    IconButton(
+                        onClick = onToggleFavorito,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (receta.esFavorita) "Quitar de favoritos" else "Agregar a favoritos",
+                            tint = if (receta.esFavorita) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                // Descripción
+                Text(
+                    text = receta.descripcion,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+
+                // Información de tiempo y categoría
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "⏱ ${receta.tiempoPreparacion} min",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "📁 ${receta.categoria}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Botones de acción
+                Row(
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    // Botón de eliminar
+                    Button(
+                        onClick = onEliminar,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Eliminar")
+                    }
                 }
             }
         }
@@ -290,11 +440,12 @@ fun RecetaItemOriginal(
 }
 
 @Composable
-fun AgregarRecetaForm(onAgregar: (String, String, Int, String) -> Unit) {
+fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var tiempo by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
+    var imagenUrl by remember { mutableStateOf("") }
 
     Column {
         OutlinedTextField(
@@ -335,19 +486,38 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String) -> Unit) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = imagenUrl,
+            onValueChange = { imagenUrl = it },
+            label = { Text("URL de la imagen (opcional)") },
+            placeholder = { Text("Ej: https://picsum.photos/400/200") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
                 val tiempoInt = tiempo.toIntOrNull() ?: 0
                 if (nombre.isNotEmpty() && descripcion.isNotEmpty() && tiempoInt > 0 && categoria.isNotEmpty()) {
-                    onAgregar(nombre, descripcion, tiempoInt, categoria)
+                    onAgregar(
+                        nombre,
+                        descripcion,
+                        tiempoInt,
+                        categoria,
+                        if (imagenUrl.isNotEmpty()) imagenUrl else null
+                    )
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            enabled = nombre.isNotEmpty() && descripcion.isNotEmpty() && tiempo.toIntOrNull() ?: 0 > 0 && categoria.isNotEmpty()
+            enabled = nombre.isNotEmpty() &&
+                    descripcion.isNotEmpty() &&
+                    tiempo.toIntOrNull() ?: 0 > 0 &&
+                    categoria.isNotEmpty()
         ) {
             Text("Agregar Receta", style = MaterialTheme.typography.labelLarge)
         }

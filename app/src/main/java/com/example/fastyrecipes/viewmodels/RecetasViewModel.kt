@@ -156,17 +156,34 @@ class RecetasViewModel(private val firebaseController: FirebaseController) : Vie
         }
     }
 
-    fun agregarReceta(nombre: String, descripcion: String, tiempo: Int, categoria: String) {
+    // FUNCIÓN CORREGIDA - usa firebaseController en lugar de db directamente
+    fun agregarReceta(nombre: String, descripcion: String, tiempo: Int, categoria: String, imagenUrl: String?) {
         viewModelScope.launch {
             try {
                 val nuevaReceta = Receta(
                     nombre = nombre,
                     descripcion = descripcion,
                     tiempoPreparacion = tiempo,
-                    categoria = categoria
+                    categoria = categoria,
+                    esFavorita = false,
+                    imagenUrl = imagenUrl
                 )
-                firebaseController.insertarReceta(nuevaReceta)
+
+                // DEBUG: Verificar qué URL estamos guardando
+                println("🆕 DEBUG ViewModel - agregarReceta:")
+                println("   - Nombre: $nombre")
+                println("   - URL: $imagenUrl")
+                println("   - ¿URL null?: ${imagenUrl == null}")
+
+                // Usar firebaseController en lugar de db directamente
+                val idGenerado = firebaseController.insertarReceta(nuevaReceta)
+                _error.value = null
+
+                println("✅ Receta agregada a Firestore via firebaseController")
+                println("   - ID generado: $idGenerado")
+
             } catch (e: Exception) {
+                println("❌ Error en ViewModel agregando receta: ${e.message}")
                 _error.value = "Error agregando receta: ${e.message}"
             }
         }

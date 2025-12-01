@@ -55,12 +55,10 @@ fun RecetaCard(
         shape = RoundedCornerShape(12.dp)
     ) {
         Column {
-            // Imagen de la receta (placeholder por ahora)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color.Gray) // Cambiar por imagen real
+            // Imagen de la receta (URL o placeholder)
+            RecetaImage(
+                imageUrl = receta.imagenUrl,
+                contentDescription = "Imagen de ${receta.nombre}"
             )
 
             Column(
@@ -77,7 +75,8 @@ fun RecetaCard(
                 Text(
                     text = receta.descripcion,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -88,7 +87,7 @@ fun RecetaCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "${receta.tiempoPreparacion} min",
+                        text = "⏱ ${receta.tiempoPreparacion} min",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -96,15 +95,13 @@ fun RecetaCard(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Precio (gratis por ahora)
+                        // Categoría
                         Text(
-                            text = "Gratis",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            text = "📁 ${receta.categoria}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(end = 8.dp)
                         )
-
-                        Spacer(modifier = Modifier.width(8.dp))
 
                         // Botón de favorito
                         IconButton(
@@ -116,14 +113,6 @@ fun RecetaCard(
                                 contentDescription = "Favorito",
                                 tint = if (receta.esFavorita) Color.Red else MaterialTheme.colorScheme.onSurface
                             )
-                        }
-
-                        // Botón "Ver receta"
-                        Button(
-                            onClick = onVerReceta,
-                            modifier = Modifier.height(36.dp)
-                        ) {
-                            Text("Ver receta", fontSize = 12.sp)
                         }
                     }
                 }
