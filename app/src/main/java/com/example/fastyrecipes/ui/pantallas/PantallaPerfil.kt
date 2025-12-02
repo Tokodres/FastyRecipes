@@ -30,6 +30,7 @@ import com.example.fastyrecipes.viewmodels.RecetasViewModel
 fun PantallaPerfil(
     viewModel: RecetasViewModel,
     onBack: () -> Unit,
+    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit
@@ -60,6 +61,7 @@ fun PantallaPerfil(
         bottomBar = {
             BottomNavigationBar(
                 currentScreen = "perfil",
+                onNavigateToInicio = onNavigateToInicio,  // ← AHORA PASA LA FUNCIÓN
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToFavoritos = onNavigateToFavoritos,
                 onNavigateToPerfil = onNavigateToPerfil

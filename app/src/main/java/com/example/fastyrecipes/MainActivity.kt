@@ -54,6 +54,7 @@ fun AppNavigation(viewModel: RecetasViewModel) {
     when (currentScreen) {
         "inicio" -> PantallaPrincipal(
             viewModel = viewModel,
+            onNavigateToInicio = { currentScreen = "inicio" },
             onNavigateToSearch = { currentScreen = "buscar" },
             onNavigateToFavoritos = { currentScreen = "favoritos" },
             onNavigateToPerfil = { currentScreen = "perfil" }
@@ -65,6 +66,7 @@ fun AppNavigation(viewModel: RecetasViewModel) {
         "favoritos" -> PantallaFavoritos(
             viewModel = viewModel,
             onBack = { currentScreen = "inicio" },
+            onNavigateToInicio = { currentScreen = "inicio" },
             onNavigateToSearch = { currentScreen = "buscar" },
             onNavigateToFavoritos = { currentScreen = "favoritos" },
             onNavigateToPerfil = { currentScreen = "perfil" }
@@ -72,6 +74,7 @@ fun AppNavigation(viewModel: RecetasViewModel) {
         "perfil" -> PantallaPerfil(
             viewModel = viewModel,
             onBack = { currentScreen = "inicio" },
+            onNavigateToInicio = { currentScreen = "inicio" },
             onNavigateToSearch = { currentScreen = "buscar" },
             onNavigateToFavoritos = { currentScreen = "favoritos" },
             onNavigateToPerfil = { currentScreen = "perfil" }

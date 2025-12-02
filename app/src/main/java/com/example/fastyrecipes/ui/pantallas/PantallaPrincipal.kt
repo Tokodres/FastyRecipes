@@ -29,6 +29,7 @@ import com.example.fastyrecipes.viewmodels.RecetasViewModel
 @Composable
 fun PantallaPrincipal(
     viewModel: RecetasViewModel,
+    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit
@@ -60,6 +61,7 @@ fun PantallaPrincipal(
         bottomBar = {
             BottomNavigationBar(
                 currentScreen = "inicio",
+                onNavigateToInicio = onNavigateToInicio,
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToFavoritos = onNavigateToFavoritos,
                 onNavigateToPerfil = onNavigateToPerfil
