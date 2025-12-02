@@ -179,5 +179,6 @@ fun BottomNavigationBar(
             selected = currentScreen == "perfil",
             onClick = onNavigateToPerfil
         )
+        // se deb cambiar las demas visdtas
     }
 }
