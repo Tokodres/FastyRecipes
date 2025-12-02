@@ -57,14 +57,31 @@ fun RecetaCard(
         onClick = onVerReceta
     ) {
         Column {
-            // Imagen de la receta - OCUPANDO MÁS ESPACIO
+            // Imagen de la receta - SIEMPRE DEBE TENER IMAGEN
             RecetaImage(
                 imageUrl = receta.imagenUrl,
                 contentDescription = "Imagen de ${receta.nombre}",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(250.dp) // Más alto para mejor visualización
+                    .height(200.dp)
             )
+
+            // Mostrar advertencia si la URL está vacía
+            if (receta.imagenUrl.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Yellow.copy(alpha = 0.3f))
+                        .padding(4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "⚠️ Esta receta no tiene imagen",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Red
+                    )
+                }
+            }
 
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -128,6 +145,7 @@ fun RecetaCard(
         }
     }
 }
+
 @Composable
 fun BottomNavigationBar(
     currentScreen: String,

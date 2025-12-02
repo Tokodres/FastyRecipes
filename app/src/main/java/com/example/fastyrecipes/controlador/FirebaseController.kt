@@ -37,7 +37,7 @@ class FirebaseController {
                         tiempoPreparacion = document.getLong("tiempo_preparacion")?.toInt() ?: 0,
                         categoria = document.getString("categoria") ?: "",
                         esFavorita = document.getBoolean("es_favorita") ?: false,
-                        imagenUrl = document.getString("imagen_url") // ← ESTA ES LA CLAVE
+                        imagenUrl = document.getString("imagen_url") ?: "" // ← Ahora es String, no nullable
                     )
 
                     println("   - Receta mapeada - imagenUrl: '${receta.imagenUrl}'")
@@ -62,6 +62,7 @@ class FirebaseController {
             listener.remove()
         }
     }
+
     // Obtener recetas por categoría en tiempo real
     fun obtenerRecetasPorCategoria(categoria: String): Flow<List<Receta>> = callbackFlow {
         val listener = recetasCollection
@@ -118,7 +119,7 @@ class FirebaseController {
             println("💾 DEBUG FirebaseController - insertarReceta:")
             println("   - Nombre: ${receta.nombre}")
             println("   - URL a guardar: '${receta.imagenUrl}'")
-            println("   - ¿URL null?: ${receta.imagenUrl == null}")
+            println("   - ¿URL vacía?: ${receta.imagenUrl.isEmpty()}")
             println("   - Todos los datos: $recetaData")
 
             document.set(recetaData).await()
@@ -165,41 +166,107 @@ class FirebaseController {
             if (snapshot.isEmpty) {
                 println("🔄 FirebaseController - Cargando datos de ejemplo...")
 
-                val recetasEjemplo = listOf(
+                // LISTA DE IMÁGENES DE COMIDA DE UNSPLASH
+                val recetasConImagenes = listOf(
                     hashMapOf(
                         "nombre" to "Pollo al Horno",
-                        "descripcion" to "Delicioso pollo horneado con especias",
-                        "tiempo_preparacion" to 40,
+                        "descripcion" to "Delicioso pollo horneado con especias, perfecto para una cena familiar",
+                        "tiempo_preparacion" to 45,
                         "categoria" to "Cena",
-                        "es_favorita" to false,
-                        "imagen_url" to "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400"
+                        "es_favorita" to true,
+                        "imagen_url" to "https://images.unsplash.com/photo-1606636660488-16a8646f012c?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
                     ),
                     hashMapOf(
                         "nombre" to "Ensalada César",
-                        "descripcion" to "Ensalada fresca con pollo y aderezo césar",
-                        "tiempo_preparacion" to 15,
+                        "descripcion" to "Ensalada fresca con pollo a la parrilla, crutones y aderezo césar casero",
+                        "tiempo_preparacion" to 20,
                         "categoria" to "Almuerzo",
                         "es_favorita" to false,
-                        "imagen_url" to "https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400"
+                        "imagen_url" to "https://images.unsplash.com/photo-1546793665-c74683f339c1?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Pasta Carbonara",
+                        "descripcion" to "Clásica pasta italiana con huevo, queso pecorino, panceta y pimienta negra",
+                        "tiempo_preparacion" to 25,
+                        "categoria" to "Cena",
+                        "es_favorita" to true,
+                        "imagen_url" to "https://images.unsplash.com/photo-1605478371315-e4c2bf81296a?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
                     ),
                     hashMapOf(
                         "nombre" to "Brownies de Chocolate",
-                        "descripcion" to "Postre de chocolate irresistible",
+                        "descripcion" to "Postre de chocolate intenso con nueces, perfecto para acompañar con helado",
+                        "tiempo_preparacion" to 35,
+                        "categoria" to "Postre",
+                        "es_favorita" to true,
+                        "imagen_url" to "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Hamburguesa Casera",
+                        "descripcion" to "Hamburguesa de carne premium con queso, lechuga, tomate y salsa especial",
                         "tiempo_preparacion" to 30,
+                        "categoria" to "Almuerzo",
+                        "es_favorita" to false,
+                        "imagen_url" to "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Sopa de Tomate",
+                        "descripcion" to "Sopa cremosa de tomate natural con albahaca fresca y crutones",
+                        "tiempo_preparacion" to 40,
+                        "categoria" to "Entrada",
+                        "es_favorita" to false,
+                        "imagen_url" to "https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Tacos al Pastor",
+                        "descripcion" to "Auténticos tacos mexicanos con carne adobada, piña y cilantro",
+                        "tiempo_preparacion" to 50,
+                        "categoria" to "Cena",
+                        "es_favorita" to true,
+                        "imagen_url" to "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Pizza Margarita",
+                        "descripcion" to "Pizza clásica italiana con salsa de tomate, mozzarella fresca y albahaca",
+                        "tiempo_preparacion" to 60,
+                        "categoria" to "Cena",
+                        "es_favorita" to false,
+                        "imagen_url" to "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Salmón a la Parrilla",
+                        "descripcion" to "Filete de salmón fresco con limón y eneldo, acompañado de vegetales",
+                        "tiempo_preparacion" to 25,
+                        "categoria" to "Cena",
+                        "es_favorita" to true,
+                        "imagen_url" to "https://images.unsplash.com/photo-1467003909585-2f8a72700288?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    ),
+                    hashMapOf(
+                        "nombre" to "Tarta de Manzana",
+                        "descripcion" to "Deliciosa tarta de manzana casera con canela y vainilla",
+                        "tiempo_preparacion" to 70,
                         "categoria" to "Postre",
                         "es_favorita" to false,
-                        "imagen_url" to "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400"
-                    ),
+                        "imagen_url" to "https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&w=400&h=300&fit=crop"
+                    )
                 )
 
-                recetasEjemplo.forEachIndexed { index, recetaData ->
+                recetasConImagenes.forEachIndexed { index, recetaData ->
                     recetasCollection.add(recetaData).await()
-                    println("   - Receta ejemplo ${index + 1} agregada")
+                    println("   - Receta ejemplo ${index + 1} agregada: ${recetaData["nombre"]}")
+                    println("   - URL de imagen: ${recetaData["imagen_url"]}")
                 }
 
                 println("✅ FirebaseController - Datos iniciales cargados exitosamente")
+                println("   - Total recetas: ${recetasConImagenes.size}")
             } else {
-                println("✅ FirebaseController - Ya existen recetas, no se cargan datos iniciales")
+                // Verificar que todas las recetas existentes tengan imagen
+                snapshot.documents.forEach { doc ->
+                    val imagenUrl = doc.getString("imagen_url")
+                    if (imagenUrl.isNullOrEmpty()) {
+                        println("⚠️  Receta sin imagen encontrada: ${doc.getString("nombre")}")
+                    }
+                }
+                println("✅ FirebaseController - Ya existen ${snapshot.size()} recetas")
             }
         } catch (e: Exception) {
             println("❌ ERROR FirebaseController cargando datos iniciales: ${e.message}")

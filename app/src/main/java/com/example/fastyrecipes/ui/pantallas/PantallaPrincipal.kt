@@ -24,21 +24,6 @@ import com.example.fastyrecipes.modelo.Receta
 import com.example.fastyrecipes.ui.components.BottomNavigationBar
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.Image
-import androidx.compose.ui.text.style.TextAlign
-import coil.compose.SubcomposeAsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -204,154 +189,6 @@ fun PantallaPrincipal(
     }
 }
 
-@Composable
-fun RecetaImage(
-    imageUrl: String?,
-    modifier: Modifier = Modifier,
-    contentDescription: String = "Imagen de receta"
-) {
-    // Estado para controlar la visibilidad de la imagen
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
-
-    // DEBUG
-    LaunchedEffect(imageUrl) {
-        println("🎯 DEBUG RecetaImage:")
-        println("   - URL: '$imageUrl'")
-        println("   - ¿Es null?: ${imageUrl == null}")
-        println("   - ¿Está vacía?: ${imageUrl?.isEmpty() ?: true}")
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(200.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        when {
-            imageUrl.isNullOrEmpty() -> {
-                // Sin URL - placeholder
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF5F5F5)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = Icons.Default.Image,
-                            contentDescription = "Sin imagen",
-                            modifier = Modifier.size(48.dp),
-                            tint = Color(0xFF666666)
-                        )
-                        Text(
-                            text = "Imagen no disponible",
-                            color = Color(0xFF666666),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-            else -> {
-                // CON URL - Cargar imagen
-                SubcomposeAsyncImage(
-                    model = imageUrl,
-                    contentDescription = contentDescription,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth(),
-                    loading = {
-                        isLoading = true
-                        hasError = false
-                        // Estado de carga - MÁS VISIBLE
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color(0xFF2196F3)), // AZUL para que sea visible
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(50.dp)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "CARGANDO IMAGEN",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "URL: ${imageUrl.take(30)}...",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    },
-                    error = { state ->
-                        isLoading = false
-                        hasError = true
-
-                        // DEBUG del error
-                        println("❌ ERROR COIL:")
-                        println("   - URL: $imageUrl")
-                        println("   - Error: ${state.result?.throwable?.localizedMessage}")
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color(0xFFF44336)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    imageVector = Icons.Default.ErrorOutline,
-                                    contentDescription = "Error",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(50.dp)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "ERROR CARGANDO IMAGEN",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Verifica la URL e internet",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    },
-                    success = {
-                        isLoading = false
-                        hasError = false
-                        println("✅✅✅ IMAGEN CARGADA EXITOSAMENTE: $imageUrl")
-                    }
-                )
-
-                // Si está cargando, mostrar también el indicador encima
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(60.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
 // Componente original de RecetaItem (con eliminar y favoritos)
 @Composable
 fun RecetaItemOriginal(
@@ -374,7 +211,7 @@ fun RecetaItemOriginal(
     ) {
         Column {
             // Imagen de la receta
-            RecetaImage(
+            com.example.fastyrecipes.ui.components.RecetaImage(
                 imageUrl = receta.imagenUrl,
                 contentDescription = "Imagen de ${receta.nombre}",
                 modifier = Modifier
@@ -465,7 +302,7 @@ fun RecetaItemOriginal(
 }
 
 @Composable
-fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit) {
+fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String) -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var tiempo by remember { mutableStateOf("") }
@@ -476,9 +313,10 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
         OutlinedTextField(
             value = nombre,
             onValueChange = { nombre = it },
-            label = { Text("Nombre de la receta") },
+            label = { Text("Nombre de la receta *") },
             placeholder = { Text("Ej: Pollo al horno") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = nombre.isEmpty()
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -486,9 +324,10 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
         OutlinedTextField(
             value = descripcion,
             onValueChange = { descripcion = it },
-            label = { Text("Descripción") },
+            label = { Text("Descripción *") },
             placeholder = { Text("Ej: Delicioso pollo horneado con especias") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = descripcion.isEmpty()
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -496,9 +335,10 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
         OutlinedTextField(
             value = tiempo,
             onValueChange = { tiempo = it },
-            label = { Text("Tiempo de preparación (minutos)") },
+            label = { Text("Tiempo de preparación (minutos) *") },
             placeholder = { Text("Ej: 45") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = tiempo.isEmpty() || tiempo.toIntOrNull() ?: 0 <= 0
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -506,9 +346,10 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
         OutlinedTextField(
             value = categoria,
             onValueChange = { categoria = it },
-            label = { Text("Categoría") },
+            label = { Text("Categoría *") },
             placeholder = { Text("Ej: Cena, Postre, Ensalada") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isError = categoria.isEmpty()
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -516,23 +357,73 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
         OutlinedTextField(
             value = imagenUrl,
             onValueChange = { imagenUrl = it },
-            label = { Text("URL de la imagen (opcional)") },
-            placeholder = { Text("Ej: https://picsum.photos/400/200") },
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("URL de la imagen *") },
+            placeholder = { Text("Ej: https://images.unsplash.com/foto-comida") },
+            modifier = Modifier.fillMaxWidth(),
+            isError = imagenUrl.isEmpty(),
+            supportingText = {
+                Text("Usa imágenes de Unsplash (unsplash.com)")
+            }
         )
+
+        // Sugerencias de URLs de ejemplo
+        Text(
+            text = "Sugerencias de URLs:",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        // Botones con URLs de ejemplo
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = { imagenUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400" },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Text("Pizza")
+            }
+            Button(
+                onClick = { imagenUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Text("Hamburguesa")
+            }
+            Button(
+                onClick = { imagenUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400" },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Text("Postre")
+            }
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
                 val tiempoInt = tiempo.toIntOrNull() ?: 0
-                if (nombre.isNotEmpty() && descripcion.isNotEmpty() && tiempoInt > 0 && categoria.isNotEmpty()) {
+                if (nombre.isNotEmpty() &&
+                    descripcion.isNotEmpty() &&
+                    tiempoInt > 0 &&
+                    categoria.isNotEmpty() &&
+                    imagenUrl.isNotEmpty()) {
                     onAgregar(
                         nombre,
                         descripcion,
                         tiempoInt,
                         categoria,
-                        if (imagenUrl.isNotEmpty()) imagenUrl else null
+                        imagenUrl.trim()
                     )
                 }
             },
@@ -542,7 +433,8 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
             enabled = nombre.isNotEmpty() &&
                     descripcion.isNotEmpty() &&
                     tiempo.toIntOrNull() ?: 0 > 0 &&
-                    categoria.isNotEmpty()
+                    categoria.isNotEmpty() &&
+                    imagenUrl.isNotEmpty()
         ) {
             Text("Agregar Receta", style = MaterialTheme.typography.labelLarge)
         }
@@ -554,6 +446,5 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String?) -> Unit)
 fun PreviewPantallaPrincipal() {
     FastyRecipesTheme {
         // Para el preview necesitarías un ViewModel mock
-        // PantallaPrincipal(viewModel = mockViewModel, onNavigateToSearch = {}, onNavigateToFavoritos = {}, onNavigateToPerfil = {})
     }
 }

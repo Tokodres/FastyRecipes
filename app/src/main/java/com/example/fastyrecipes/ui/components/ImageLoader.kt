@@ -8,142 +8,137 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
-import androidx.compose.material3.*
 
 @Composable
 fun RecetaImage(
-    imageUrl: String?,
+    imageUrl: String,
     modifier: Modifier = Modifier,
     contentDescription: String = "Imagen de receta"
 ) {
-    // DEBUG DETALLADO
-    LaunchedEffect(imageUrl) {
-        println("🎯 DEBUG RecetaImage - URL recibida:")
-        println("   - Valor: '$imageUrl'")
-        println("   - Es null: ${imageUrl == null}")
-        println("   - Es empty: ${imageUrl?.isEmpty() ?: true}")
-        println("   - Longitud: ${imageUrl?.length ?: 0}")
-    }
-
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp)
-            .background(
-                when {
-                    imageUrl == null -> Color.Red
-                    imageUrl.isEmpty() -> Color.Yellow
-                    else -> Color(0xFF4CAF50) // Verde
-                }
-            ),
+            .height(200.dp),
         contentAlignment = Alignment.Center
     ) {
-        when {
-            imageUrl == null -> {
+        // Verificar si la URL está vacía
+        if (imageUrl.isEmpty()) {
+            // Mostrar placeholder si no hay URL
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF5F5F5)),
+                contentAlignment = Alignment.Center
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("❌ URL ES NULL", color = Color.White, textAlign = TextAlign.Center)
-                    Text("Firestore devolvió null", color = Color.White, textAlign = TextAlign.Center)
-                    Text("Verifica ViewModel/Firestore", color = Color.White, textAlign = TextAlign.Center)
+                    Icon(
+                        Icons.Default.Image,
+                        contentDescription = "Imagen no disponible",
+                        modifier = Modifier.size(48.dp),
+                        tint = Color(0xFF666666)
+                    )
+                    Text(
+                        text = "Imagen no disponible",
+                        color = Color(0xFF666666),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
-            imageUrl.isEmpty() -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("⚠️ URL VACÍA", color = Color.Black, textAlign = TextAlign.Center)
-                    Text("Firestore: ''", color = Color.Black, textAlign = TextAlign.Center)
-                    Text("URL se guardó vacía", color = Color.Black, textAlign = TextAlign.Center)
-                }
-            }
-            else -> {
-                // INTENTAR CARGAR LA IMAGEN CON SUBCOMPOSEASYNCIMAGE
-                SubcomposeAsyncImage(
-                    model = imageUrl,
-                    contentDescription = contentDescription,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth(),
-                    loading = {
-                        // Mientras carga
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.3f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                CircularProgressIndicator(
-                                    color = Color.White,
-                                    modifier = Modifier.size(40.dp)
-                                )
-                                Text(
-                                    text = "Cargando imagen...",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = "URL: ${imageUrl.take(25)}...",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-                    },
-                    error = {
-                        // Si hay error en la carga
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "❌ ERROR COIL",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "No se pudo cargar la imagen",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "URL: ${imageUrl.take(20)}...",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "Verifica internet/URL",
-                                    color = Color.Red,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    },
-                    success = {
-                        // Debug cuando carga exitosamente
-                        println("✅ DEBUG: Imagen cargada EXITOSAMENTE desde: $imageUrl")
+        } else {
+            // Cargar imagen desde URL
+            SubcomposeAsyncImage(
+                model = imageUrl,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                loading = {
+                    // Estado de carga
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFE0E0E0)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(40.dp)
+                        )
                     }
+                },
+                error = {
+                    // Estado de error
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFF8BBD0)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.Image,
+                                contentDescription = "Error",
+                                tint = Color.Red,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text(
+                                text = "Error cargando imagen",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+// Versión simplificada para pantallas pequeñas
+@Composable
+fun SmallRecetaImage(
+    imageUrl: String,
+    modifier: Modifier = Modifier,
+    contentDescription: String = "Imagen de receta"
+) {
+    Box(
+        modifier = modifier
+            .height(80.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageUrl.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF5F5F5)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Image,
+                    contentDescription = "Sin imagen",
+                    modifier = Modifier.size(24.dp),
+                    tint = Color(0xFF666666)
                 )
             }
+        } else {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = contentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

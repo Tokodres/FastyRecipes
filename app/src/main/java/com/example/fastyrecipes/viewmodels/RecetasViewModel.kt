@@ -156,24 +156,30 @@ class RecetasViewModel(private val firebaseController: FirebaseController) : Vie
         }
     }
 
-    // FUNCIÓN CORREGIDA - usa firebaseController en lugar de db directamente
-    fun agregarReceta(nombre: String, descripcion: String, tiempo: Int, categoria: String, imagenUrl: String?) {
+    // FUNCIÓN CORREGIDA - ahora imagenUrl es obligatorio
+    fun agregarReceta(nombre: String, descripcion: String, tiempo: Int, categoria: String, imagenUrl: String) {
         viewModelScope.launch {
             try {
+                // VALIDAR QUE LA URL NO ESTÉ VACÍA
+                if (imagenUrl.isBlank()) {
+                    _error.value = "La URL de la imagen es obligatoria"
+                    return@launch
+                }
+
                 val nuevaReceta = Receta(
                     nombre = nombre,
                     descripcion = descripcion,
                     tiempoPreparacion = tiempo,
                     categoria = categoria,
                     esFavorita = false,
-                    imagenUrl = imagenUrl
+                    imagenUrl = imagenUrl.trim()  // Asegurar que no tenga espacios
                 )
 
                 // DEBUG: Verificar qué URL estamos guardando
                 println("🆕 DEBUG ViewModel - agregarReceta:")
                 println("   - Nombre: $nombre")
                 println("   - URL: $imagenUrl")
-                println("   - ¿URL null?: ${imagenUrl == null}")
+                println("   - Longitud URL: ${imagenUrl.length}")
 
                 // Usar firebaseController en lugar de db directamente
                 val idGenerado = firebaseController.insertarReceta(nuevaReceta)
