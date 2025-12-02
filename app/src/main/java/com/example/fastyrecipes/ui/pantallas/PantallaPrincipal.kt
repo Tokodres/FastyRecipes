@@ -1,27 +1,71 @@
 package com.example.fastyrecipes.ui.pantallas
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import com.example.fastyrecipes.data.ImageUrls
 import com.example.fastyrecipes.modelo.Receta
 import com.example.fastyrecipes.ui.components.BottomNavigationBar
+import com.example.fastyrecipes.ui.components.RecetaImage
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 
@@ -29,7 +73,7 @@ import com.example.fastyrecipes.viewmodels.RecetasViewModel
 @Composable
 fun PantallaPrincipal(
     viewModel: RecetasViewModel,
-    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
+    onNavigateToInicio: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit
@@ -50,6 +94,9 @@ fun PantallaPrincipal(
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                navigationIcon = {
+                    // No necesitamos navigationIcon aquí, pero lo dejamos vacío
                 },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
@@ -170,28 +217,44 @@ fun PantallaPrincipal(
             }
         }
 
-        // Dialog para agregar receta
+        // Dialog para agregar receta CON SCROLL
         if (showAddDialog) {
             AlertDialog(
                 onDismissRequest = { showAddDialog = false },
-                title = { Text("Agregar Nueva Receta") },
+                title = {
+                    Text(
+                        "Agregar Nueva Receta",
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                },
                 text = {
-                    AgregarRecetaForm { nombre, descripcion, tiempo, categoria, imagenUrl ->
-                        viewModel.agregarReceta(nombre, descripcion, tiempo, categoria, imagenUrl)
-                        showAddDialog = false
+                    // Agregar un ScrollView al contenido del diálogo
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 500.dp) // Altura máxima
+                            .verticalScroll(rememberScrollState()) // Permite scroll
+                    ) {
+                        AgregarRecetaForm { nombre, descripcion, tiempo, categoria, imagenUrl ->
+                            viewModel.agregarReceta(nombre, descripcion, tiempo, categoria, imagenUrl)
+                            showAddDialog = false
+                        }
                     }
                 },
                 confirmButton = {
                     TextButton(onClick = { showAddDialog = false }) {
                         Text("Cancelar")
                     }
-                }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.95f) // No ocupar todo el ancho
+                    .heightIn(max = 600.dp) // Altura máxima del diálogo completo
             )
         }
     }
 }
 
-// Componente original de RecetaItem (con eliminar y favoritos)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecetaItemOriginal(
     receta: Receta,
@@ -213,7 +276,7 @@ fun RecetaItemOriginal(
     ) {
         Column {
             // Imagen de la receta
-            com.example.fastyrecipes.ui.components.RecetaImage(
+            RecetaImage(
                 imageUrl = receta.imagenUrl,
                 contentDescription = "Imagen de ${receta.nombre}",
                 modifier = Modifier
@@ -303,6 +366,7 @@ fun RecetaItemOriginal(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String) -> Unit) {
     var nombre by remember { mutableStateOf("") }
@@ -347,11 +411,32 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String) -> Unit) 
 
         OutlinedTextField(
             value = categoria,
-            onValueChange = { categoria = it },
+            onValueChange = {
+                categoria = it
+                // Si el usuario está escribiendo una categoría, sugerir una imagen automáticamente
+                if (it.isNotBlank() && imagenUrl.isEmpty()) {
+                    imagenUrl = ImageUrls.getImageByCategory(it)
+                }
+            },
             label = { Text("Categoría *") },
-            placeholder = { Text("Ej: Cena, Postre, Ensalada") },
+            placeholder = { Text("Ej: Cena, Postre, Ensalada, Pizza") },
             modifier = Modifier.fillMaxWidth(),
-            isError = categoria.isEmpty()
+            isError = categoria.isEmpty(),
+            trailingIcon = {
+                if (categoria.isNotEmpty()) {
+                    IconButton(
+                        onClick = {
+                            // Generar una nueva imagen para esta categoría
+                            imagenUrl = ImageUrls.getImageByCategory(categoria)
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Generar nueva imagen para esta categoría"
+                        )
+                    }
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -360,53 +445,130 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String) -> Unit) 
             value = imagenUrl,
             onValueChange = { imagenUrl = it },
             label = { Text("URL de la imagen *") },
-            placeholder = { Text("Ej: https://images.unsplash.com/foto-comida") },
+            placeholder = { Text("Se generará automáticamente basado en la categoría") },
             modifier = Modifier.fillMaxWidth(),
             isError = imagenUrl.isEmpty(),
             supportingText = {
-                Text("Usa imágenes de Unsplash (unsplash.com)")
+                Text("La URL se genera automáticamente basada en la categoría")
             }
         )
 
-        // Sugerencias de URLs de ejemplo
+        // Botones de acción para imágenes
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Botón para generar imagen basada en categoría
+            Button(
+                onClick = {
+                    if (categoria.isNotEmpty()) {
+                        imagenUrl = ImageUrls.getImageByCategory(categoria)
+                    }
+                },
+                modifier = Modifier.weight(1f),
+                enabled = categoria.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Imagen por categoría", fontSize = 12.sp)
+            }
+
+            // Botón para imagen aleatoria
+            Button(
+                onClick = {
+                    imagenUrl = ImageUrls.getRandomImageUrl()
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Imagen aleatoria", fontSize = 12.sp)
+            }
+        }
+
+        // Sugerencias de categorías populares - SIMPLIFICADO sin FlowRow
         Text(
-            text = "Sugerencias de URLs:",
+            text = "Categorías populares:",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp)
         )
 
-        // Botones con URLs de ejemplo
+        // Categorías en dos filas simples sin FlowRow
+        val categoriasPopulares = listOf("Pizza", "Hamburguesa", "Pasta", "Pollo", "Postre", "Ensalada")
+
+        // Primera fila
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(
-                onClick = { imagenUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400" },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+            categoriasPopulares.take(3).forEach { cat ->
+                SuggestionChip(
+                    onClick = {
+                        categoria = cat
+                        imagenUrl = ImageUrls.getImageByCategory(cat)
+                    },
+                    label = { Text(cat) },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 )
-            ) {
-                Text("Pizza")
             }
-            Button(
-                onClick = { imagenUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+        }
+
+        // Segunda fila
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            categoriasPopulares.drop(3).forEach { cat ->
+                SuggestionChip(
+                    onClick = {
+                        categoria = cat
+                        imagenUrl = ImageUrls.getImageByCategory(cat)
+                    },
+                    label = { Text(cat) },
+                    colors = SuggestionChipDefaults.suggestionChipColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 )
-            ) {
-                Text("Hamburguesa")
             }
-            Button(
-                onClick = { imagenUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400" },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
+        }
+
+        // Muestra la imagen actual como vista previa
+        if (imagenUrl.isNotEmpty()) {
+            Text(
+                text = "Vista previa de la imagen:",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
             ) {
-                Text("Postre")
+                AsyncImage(
+                    model = imagenUrl,
+                    contentDescription = "Vista previa de imagen",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
 
@@ -448,5 +610,12 @@ fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String) -> Unit) 
 fun PreviewPantallaPrincipal() {
     FastyRecipesTheme {
         // Para el preview necesitarías un ViewModel mock
+        // PantallaPrincipal(
+        //     viewModel = mockViewModel,
+        //     onNavigateToInicio = {},
+        //     onNavigateToSearch = {},
+        //     onNavigateToFavoritos = {},
+        //     onNavigateToPerfil = {}
+        // )
     }
 }

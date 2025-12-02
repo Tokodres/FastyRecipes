@@ -149,7 +149,7 @@ fun RecetaCard(
 @Composable
 fun BottomNavigationBar(
     currentScreen: String,
-    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
+    onNavigateToInicio: () -> Unit,  // <-- NUEVO PARÁMETRO
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit
@@ -159,7 +159,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
             label = { Text("Inicio") },
             selected = currentScreen == "inicio",
-            onClick = onNavigateToInicio  // ← AHORA SÍ FUNCIONA
+            onClick = onNavigateToInicio  // <-- USAR EL NUEVO PARÁMETRO
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
