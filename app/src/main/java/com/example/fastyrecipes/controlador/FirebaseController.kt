@@ -36,8 +36,7 @@ class FirebaseController {
                         if (item is Map<*, *>) {
                             Ingrediente(
                                 nombre = item["nombre"] as? String ?: "",
-                                cantidad = item["cantidad"] as? String ?: "",
-                                unidad = item["unidad"] as? String ?: ""
+                                cantidad = item["cantidad"] as? String ?: ""
                             )
                         } else {
                             null
@@ -133,8 +132,7 @@ class FirebaseController {
                 "ingredientes" to receta.ingredientes.map { ingrediente ->
                     hashMapOf(
                         "nombre" to ingrediente.nombre,
-                        "cantidad" to ingrediente.cantidad,
-                        "unidad" to ingrediente.unidad
+                        "cantidad" to ingrediente.cantidad
                     )
                 },
                 "pasos" to receta.pasos

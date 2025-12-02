@@ -224,8 +224,8 @@ fun ListaDeIngredientes(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = if (ingrediente.unidad.isNotEmpty()) {
-                            "${ingrediente.cantidad} ${ingrediente.unidad}"
+                        text = if (ingrediente.cantidad.isNotEmpty()) {
+                            "${ingrediente.cantidad}"
                         } else {
                             ingrediente.cantidad
                         },

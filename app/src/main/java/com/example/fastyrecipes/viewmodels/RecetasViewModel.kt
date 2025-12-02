@@ -191,7 +191,7 @@ class RecetasViewModel(private val firebaseController: FirebaseController) : Vie
                 println("   - Tiempo: $tiempo min")
                 println("   - Ingredientes: ${ingredientes.size}")
                 ingredientes.forEachIndexed { index, ingrediente ->
-                    println("   - ${index + 1}. ${ingrediente.nombre}: ${ingrediente.cantidad} ${ingrediente.unidad}")
+                    println("   - ${index + 1}. ${ingrediente.nombre}: ${ingrediente.cantidad} ")
                 }
                 println("   - Pasos: ${pasos.size}")
                 println("   - Categoría: $categoria")

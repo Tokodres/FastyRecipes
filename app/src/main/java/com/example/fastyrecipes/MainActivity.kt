@@ -12,16 +12,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fastyrecipes.controller.FirebaseController
-import com.example.fastyrecipes.ui.pantallas.PantallaBusqueda
-import com.example.fastyrecipes.ui.pantallas.PantallaFavoritos
-import com.example.fastyrecipes.ui.pantallas.PantallaPerfil
-import com.example.fastyrecipes.ui.pantallas.PantallaPrincipal
-import com.example.fastyrecipes.ui.pantallas.PantallaCrearReceta
+import com.example.fastyrecipes.ui.pantallas.*
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 import com.example.fastyrecipes.viewmodels.FirebaseViewModelFactory
-import com.example.fastyrecipes.modelo.Ingrediente
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -47,6 +41,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation(viewModel: RecetasViewModel) {
     var currentScreen by remember { mutableStateOf("inicio") }
+    var selectedReceta by remember { mutableStateOf<com.example.fastyrecipes.modelo.Receta?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.recargarDatos()
@@ -59,11 +54,19 @@ fun AppNavigation(viewModel: RecetasViewModel) {
             onNavigateToSearch = { currentScreen = "buscar" },
             onNavigateToFavoritos = { currentScreen = "favoritos" },
             onNavigateToPerfil = { currentScreen = "perfil" },
-            onNavigateToCrearReceta = { currentScreen = "crearReceta" }
+            onNavigateToCrearReceta = { currentScreen = "crearReceta" },
+            onNavigateToDetalleReceta = { receta ->
+                selectedReceta = receta
+                currentScreen = "detalle"
+            }
         )
         "buscar" -> PantallaBusqueda(
             viewModel = viewModel,
-            onBack = { currentScreen = "inicio" }
+            onBack = { currentScreen = "inicio" },
+            onNavigateToDetalleReceta = { receta ->
+                selectedReceta = receta
+                currentScreen = "detalle"
+            }
         )
         "favoritos" -> PantallaFavoritos(
             viewModel = viewModel,
@@ -71,7 +74,11 @@ fun AppNavigation(viewModel: RecetasViewModel) {
             onNavigateToInicio = { currentScreen = "inicio" },
             onNavigateToSearch = { currentScreen = "buscar" },
             onNavigateToFavoritos = { currentScreen = "favoritos" },
-            onNavigateToPerfil = { currentScreen = "perfil" }
+            onNavigateToPerfil = { currentScreen = "perfil" },
+            onNavigateToDetalleReceta = { receta ->
+                selectedReceta = receta
+                currentScreen = "detalle"
+            }
         )
         "perfil" -> PantallaPerfil(
             viewModel = viewModel,
@@ -95,5 +102,17 @@ fun AppNavigation(viewModel: RecetasViewModel) {
             },
             onCancelar = { currentScreen = "inicio" }
         )
+        "detalle" -> {
+            selectedReceta?.let { receta ->
+                PantallaDetalleReceta(
+                    receta = receta,
+                    onBack = { currentScreen = "inicio" },
+                    onToggleFavorito = { viewModel.toggleFavorito(receta) }
+                )
+            } ?: run {
+                // Si no hay receta seleccionada, volver al inicio
+                currentScreen = "inicio"
+            }
+        }
     }
 }

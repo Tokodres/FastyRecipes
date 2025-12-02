@@ -139,7 +139,6 @@ fun PantallaCrearReceta(
                     ingredientes = ingredientes,
                     nuevoNombre = nuevoIngredienteNombre,
                     nuevoCantidad = nuevoIngredienteCantidad,
-                    nuevoUnidad = nuevoIngredienteUnidad,
                     onNombreChange = { nuevoIngredienteNombre = it },
                     onCantidadChange = { nuevoIngredienteCantidad = it },
                     onUnidadChange = { nuevoIngredienteUnidad = it },
@@ -147,13 +146,11 @@ fun PantallaCrearReceta(
                         if (nuevoIngredienteNombre.isNotBlank() && nuevoIngredienteCantidad.isNotBlank()) {
                             val nuevoIngrediente = Ingrediente(
                                 nombre = nuevoIngredienteNombre,
-                                cantidad = nuevoIngredienteCantidad,
-                                unidad = nuevoIngredienteUnidad
+                                cantidad = nuevoIngredienteCantidad
                             )
                             ingredientes = ingredientes + nuevoIngrediente
                             nuevoIngredienteNombre = ""
                             nuevoIngredienteCantidad = ""
-                            nuevoIngredienteUnidad = ""
                         }
                     },
                     onRemoveIngrediente = { ingrediente ->
@@ -252,7 +249,6 @@ fun PasoIngredientes(
     ingredientes: List<Ingrediente>,
     nuevoNombre: String,
     nuevoCantidad: String,
-    nuevoUnidad: String,
     onNombreChange: (String) -> Unit,
     onCantidadChange: (String) -> Unit,
     onUnidadChange: (String) -> Unit,
@@ -312,13 +308,6 @@ fun PasoIngredientes(
                                 modifier = Modifier.weight(1f)
                             )
 
-                            OutlinedTextField(
-                                value = nuevoUnidad,
-                                onValueChange = onUnidadChange,
-                                label = { Text("Unidad") },
-                                placeholder = { Text("Ej: gramos, tazas") },
-                                modifier = Modifier.weight(1f)
-                            )
                         }
 
                         Button(
@@ -360,8 +349,8 @@ fun PasoIngredientes(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = if (ingrediente.unidad.isNotEmpty()) {
-                                    "${ingrediente.cantidad} ${ingrediente.unidad}"
+                                text = if (ingrediente.cantidad.isNotEmpty()) {
+                                    "${ingrediente.cantidad} "
                                 } else {
                                     ingrediente.cantidad
                                 },

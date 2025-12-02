@@ -5,10 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,16 +19,18 @@ import com.example.fastyrecipes.ui.components.BottomNavigationBar
 import com.example.fastyrecipes.ui.components.RecetaImage
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaFavoritos(
     viewModel: RecetasViewModel,
     onBack: () -> Unit,
-    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
+    onNavigateToInicio: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
-    onNavigateToPerfil: () -> Unit
+    onNavigateToPerfil: () -> Unit,
+    onNavigateToDetalleReceta: (Receta) -> Unit  // NUEVO PARÁMETRO
 ) {
 
     val recetasFavoritas by viewModel.recetasFavoritas.collectAsStateWithLifecycle()
@@ -74,7 +73,7 @@ fun PantallaFavoritos(
         bottomBar = {
             BottomNavigationBar(
                 currentScreen = "favoritos",
-                onNavigateToInicio = onNavigateToInicio,  // ← AHORA PASA LA FUNCIÓN
+                onNavigateToInicio = onNavigateToInicio,
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToFavoritos = onNavigateToFavoritos,
                 onNavigateToPerfil = onNavigateToPerfil
@@ -167,37 +166,6 @@ fun PantallaFavoritos(
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        // Estadísticas por categoría
-                        val categoriasFavoritas = recetasFavoritas
-                            .groupBy { it.categoria }
-                            .mapValues { it.value.size }
-
-                        if (categoriasFavoritas.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Distribución por categoría:",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                categoriasFavoritas.forEach { (categoria, count) ->
-                                    AssistChip(
-                                        onClick = { /* Podrías navegar a la categoría */ },
-                                        label = { Text("$categoria: $count") },
-                                        colors = AssistChipDefaults.assistChipColors(
-                                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                        ),
-                                        modifier = Modifier.padding(bottom = 4.dp)
-                                    )
-                                }
-                            }
-                        }
                     }
 
                     // Lista de recetas favoritas
@@ -210,7 +178,8 @@ fun PantallaFavoritos(
                         items(recetasFavoritas) { receta ->
                             RecetaItemFavoritos(
                                 receta = receta,
-                                onToggleFavorito = { viewModel.toggleFavorito(receta) }
+                                onToggleFavorito = { viewModel.toggleFavorito(receta) },
+                                onVerDetalle = { onNavigateToDetalleReceta(receta) }  // NUEVO
                             )
                         }
                     }
@@ -227,15 +196,17 @@ fun PantallaFavoritos(
     }
 }
 
-// Componente específico para favoritos CON IMAGEN
+// Componente específico para favoritos - MODIFICADO
 @Composable
 fun RecetaItemFavoritos(
     receta: Receta,
-    onToggleFavorito: () -> Unit
+    onToggleFavorito: () -> Unit,
+    onVerDetalle: () -> Unit  // NUEVO PARÁMETRO
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable { onVerDetalle() },  // HACE CLICKABLE TODA LA TARJETA
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -243,14 +214,19 @@ fun RecetaItemFavoritos(
         shape = MaterialTheme.shapes.medium
     ) {
         Column {
-            // IMAGEN DE LA RECETA
-            RecetaImage(
-                imageUrl = receta.imagenUrl,
-                contentDescription = "Imagen de ${receta.nombre}",
+            // IMAGEN DE LA RECETA - AHORA ES CLICKABLE
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-            )
+                    .clickable { onVerDetalle() }
+            ) {
+                RecetaImage(
+                    imageUrl = receta.imagenUrl,
+                    contentDescription = "Imagen de ${receta.nombre}",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -265,8 +241,9 @@ fun RecetaItemFavoritos(
                         text = receta.nombre,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 2
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onVerDetalle() }
                     )
 
                     // Botón de favorito (siempre activo en favoritos)
@@ -290,7 +267,8 @@ fun RecetaItemFavoritos(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .padding(vertical = 12.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .clickable { onVerDetalle() },
                     maxLines = 3
                 )
 
@@ -318,7 +296,7 @@ fun RecetaItemFavoritos(
                         )
                     }
 
-                    // Categoría - Usando AssistChip en lugar de Badge para evitar problemas de API
+                    // Categoría
                     AssistChip(
                         onClick = { /* Navegar a recetas por categoría */ },
                         label = {
@@ -334,100 +312,8 @@ fun RecetaItemFavoritos(
                         ),
                         modifier = Modifier.height(28.dp)
                     )
-
-                    // Indicador de favorito
-                    AssistChip(
-                        onClick = { /* No hace nada, solo es indicador */ },
-                        label = {
-                            Text(
-                                text = "Favorito",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        ),
-                        modifier = Modifier.height(28.dp)
-                    )
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewPantallaFavoritosConRecetas() {
-    FastyRecipesTheme {
-        // Preview con recetas
-        // PantallaFavoritos(
-        //     viewModel = ...,
-        //     onBack = {},
-        //     onNavigateToSearch = {},
-        //     onNavigateToFavoritos = {},
-        //     onNavigateToPerfil = {}
-        // )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewPantallaFavoritosVacia() {
-    FastyRecipesTheme {
-        // Preview sin recetas
-        // PantallaFavoritos(
-        //     viewModel = ...,
-        //     onBack = {},
-        //     onNavigateToSearch = {},
-        //     onNavigateToFavoritos = {},
-        //     onNavigateToPerfil = {}
-        // )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewRecetaItemFavoritos() {
-    FastyRecipesTheme {
-        val recetaEjemplo = Receta(
-            id = "1",
-            nombre = "Pizza Margarita Clásica Italiana",
-            descripcion = "Deliciosa pizza italiana con salsa de tomate natural, mozzarella fresca y hojas de albahaca. Un clásico que nunca falla.",
-            tiempoPreparacion = 45,
-            imagenUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
-            categoria = "Italiana",
-            esFavorita = true
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            RecetaItemFavoritos(
-                receta = recetaEjemplo,
-                onToggleFavorito = { }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            val recetaEjemplo2 = Receta(
-                id = "2",
-                nombre = "Brownie de Chocolate Intenso",
-                descripcion = "Brownie húmedo y esponjoso con trozos de chocolate negro y nueces. Perfecto para acompañar con helado de vainilla.",
-                tiempoPreparacion = 35,
-                imagenUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400",
-                categoria = "Postre",
-                esFavorita = true
-            )
-
-            RecetaItemFavoritos(
-                receta = recetaEjemplo2,
-                onToggleFavorito = { }
-            )
         }
     }
 }

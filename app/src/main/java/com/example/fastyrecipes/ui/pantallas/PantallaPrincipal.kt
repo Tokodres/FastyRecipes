@@ -5,12 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,8 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fastyrecipes.modelo.Receta
 import com.example.fastyrecipes.ui.components.BottomNavigationBar
+import com.example.fastyrecipes.ui.components.RecetaImage
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
+import androidx.compose.foundation.clickable
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,14 +30,13 @@ fun PantallaPrincipal(
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit,
-    onNavigateToCrearReceta: () -> Unit  // NUEVO PARÁMETRO
+    onNavigateToCrearReceta: () -> Unit,
+    onNavigateToDetalleReceta: (Receta) -> Unit  // NUEVO PARÁMETRO
 ) {
 
     val recetas by viewModel.recetas.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
-
-    var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -70,7 +66,7 @@ fun PantallaPrincipal(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onNavigateToCrearReceta,  // CAMBIADO
+                onClick = onNavigateToCrearReceta,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Crear receta")
@@ -155,7 +151,8 @@ fun PantallaPrincipal(
                             RecetaItemOriginal(
                                 receta = receta,
                                 onToggleFavorito = { viewModel.toggleFavorito(receta) },
-                                onEliminar = { viewModel.eliminarReceta(receta) }
+                                onEliminar = { viewModel.eliminarReceta(receta) },
+                                onVerDetalle = { onNavigateToDetalleReceta(receta) }  // NUEVO
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -170,48 +167,22 @@ fun PantallaPrincipal(
                 // Aquí podrías mostrar un Snackbar
             }
         }
-
-        // Dialog para agregar receta
-        if (showAddDialog) {
-            AlertDialog(
-                onDismissRequest = { showAddDialog = false },
-                title = { Text("Agregar Nueva Receta") },
-                text = {
-                    AgregarRecetaForm { nombre, descripcion, tiempo, categoria, imagenUrl ->
-                        // Por ahora, usamos listas vacías para ingredientes y pasos
-                        // Cuando tengas la pantalla completa, esto cambiará
-                        viewModel.agregarReceta(
-                            nombre = nombre,
-                            tiempo = tiempo,
-                            ingredientes = emptyList(),  // Lista temporal
-                            pasos = emptyList(),         // Lista temporal
-                            categoria = categoria,
-                            imagenUrl = imagenUrl
-                        )
-                        showAddDialog = false
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showAddDialog = false }) {
-                        Text("Cancelar")
-                    }
-                }
-            )
-        }
     }
 }
 
-// Componente original de RecetaItem (con eliminar y favoritos)
+// Componente original de RecetaItem (con eliminar y favoritos) - MODIFICADO
 @Composable
 fun RecetaItemOriginal(
     receta: Receta,
     onToggleFavorito: () -> Unit,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    onVerDetalle: () -> Unit  // NUEVO PARÁMETRO
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable { onVerDetalle() },  // HACE CLICKABLE TODA LA TARJETA
         colors = CardDefaults.cardColors(
             containerColor = if (receta.esFavorita) {
                 MaterialTheme.colorScheme.secondaryContainer
@@ -222,14 +193,19 @@ fun RecetaItemOriginal(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            // Imagen de la receta
-            com.example.fastyrecipes.ui.components.RecetaImage(
-                imageUrl = receta.imagenUrl,
-                contentDescription = "Imagen de ${receta.nombre}",
+            // Imagen de la receta - AHORA ES CLICKABLE
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-            )
+                    .clickable { onVerDetalle() }  // TAMBIÉN LA IMAGEN ES CLICKABLE
+            ) {
+                RecetaImage(
+                    imageUrl = receta.imagenUrl,
+                    contentDescription = "Imagen de ${receta.nombre}",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Column(modifier = Modifier.padding(16.dp)) {
                 // Header con nombre y botón de favorito
@@ -242,7 +218,9 @@ fun RecetaItemOriginal(
                         text = receta.nombre,
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onVerDetalle() }  // EL NOMBRE TAMBIÉN ES CLICKABLE
                     )
 
                     // Botón de favorito
@@ -263,7 +241,9 @@ fun RecetaItemOriginal(
                     text = receta.descripcion,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .clickable { onVerDetalle() }  // LA DESCRIPCIÓN TAMBIÉN ES CLICKABLE
                 )
 
                 // Información de tiempo y categoría
@@ -310,153 +290,5 @@ fun RecetaItemOriginal(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun AgregarRecetaForm(onAgregar: (String, String, Int, String, String) -> Unit) {
-    var nombre by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
-    var tiempo by remember { mutableStateOf("") }
-    var categoria by remember { mutableStateOf("") }
-    var imagenUrl by remember { mutableStateOf("") }
-
-    Column {
-        OutlinedTextField(
-            value = nombre,
-            onValueChange = { nombre = it },
-            label = { Text("Nombre de la receta *") },
-            placeholder = { Text("Ej: Pollo al horno") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = nombre.isEmpty()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = descripcion,
-            onValueChange = { descripcion = it },
-            label = { Text("Descripción *") },
-            placeholder = { Text("Ej: Delicioso pollo horneado con especias") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = descripcion.isEmpty()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = tiempo,
-            onValueChange = { tiempo = it },
-            label = { Text("Tiempo de preparación (minutos) *") },
-            placeholder = { Text("Ej: 45") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = tiempo.isEmpty() || tiempo.toIntOrNull() ?: 0 <= 0
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = categoria,
-            onValueChange = { categoria = it },
-            label = { Text("Categoría *") },
-            placeholder = { Text("Ej: Cena, Postre, Ensalada") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = categoria.isEmpty()
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = imagenUrl,
-            onValueChange = { imagenUrl = it },
-            label = { Text("URL de la imagen *") },
-            placeholder = { Text("Ej: https://images.unsplash.com/foto-comida") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = imagenUrl.isEmpty(),
-            supportingText = {
-                Text("Usa imágenes de Unsplash (unsplash.com)")
-            }
-        )
-
-        // Sugerencias de URLs de ejemplo
-        Text(
-            text = "Sugerencias de URLs:",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        // Botones con URLs de ejemplo
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = { imagenUrl = "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400" },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Text("Pizza")
-            }
-            Button(
-                onClick = { imagenUrl = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400" },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Text("Hamburguesa")
-            }
-            Button(
-                onClick = { imagenUrl = "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=400" },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Text("Postre")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick = {
-                val tiempoInt = tiempo.toIntOrNull() ?: 0
-                if (nombre.isNotEmpty() &&
-                    descripcion.isNotEmpty() &&
-                    tiempoInt > 0 &&
-                    categoria.isNotEmpty() &&
-                    imagenUrl.isNotEmpty()) {
-                    onAgregar(
-                        nombre,
-                        descripcion,
-                        tiempoInt,
-                        categoria,
-                        imagenUrl.trim()
-                    )
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            enabled = nombre.isNotEmpty() &&
-                    descripcion.isNotEmpty() &&
-                    tiempo.toIntOrNull() ?: 0 > 0 &&
-                    categoria.isNotEmpty() &&
-                    imagenUrl.isNotEmpty()
-        ) {
-            Text("Agregar Receta", style = MaterialTheme.typography.labelLarge)
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPantallaPrincipal() {
-    FastyRecipesTheme {
-        // Para el preview necesitarías un ViewModel mock
     }
 }

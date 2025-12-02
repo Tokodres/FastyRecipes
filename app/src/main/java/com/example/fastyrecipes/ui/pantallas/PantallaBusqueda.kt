@@ -20,11 +20,13 @@ import com.example.fastyrecipes.ui.components.SearchBar
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 import androidx.compose.ui.text.font.FontWeight
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaBusqueda(
     viewModel: RecetasViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onNavigateToDetalleReceta: (com.example.fastyrecipes.modelo.Receta) -> Unit
 ) {
 
     // Estados del ViewModel
@@ -141,7 +143,7 @@ fun PantallaBusqueda(
                         RecetaCard(
                             receta = receta,
                             onToggleFavorito = { viewModel.toggleFavorito(receta) },
-                            onVerReceta = { /* Navegar a detalle */ }
+                            onVerReceta = { onNavigateToDetalleReceta(receta) }
                         )
                     }
                 }
@@ -150,6 +152,7 @@ fun PantallaBusqueda(
     }
 }
 
+// FALTA ESTA FUNCIÓN - AGREGALA AL FINAL DEL ARCHIVO
 @Composable
 fun CategoriasRow(
     categorias: List<String>,
