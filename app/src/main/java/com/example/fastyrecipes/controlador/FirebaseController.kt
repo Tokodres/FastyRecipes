@@ -1,5 +1,6 @@
 package com.example.fastyrecipes.controller
 
+import com.example.fastyrecipes.modelo.Ingrediente
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -30,18 +31,34 @@ class FirebaseController {
                     println("   - Campos disponibles: ${document.data?.keys}")
                     println("   - imagen_url raw: '${document.getString("imagen_url")}'")
 
-                    val receta = Receta(
+                    // Mapear ingredientes
+                    val ingredientesList = (document.get("ingredientes") as? List<*>)?.mapNotNull { item ->
+                        if (item is Map<*, *>) {
+                            Ingrediente(
+                                nombre = item["nombre"] as? String ?: "",
+                                cantidad = item["cantidad"] as? String ?: "",
+                                unidad = item["unidad"] as? String ?: ""
+                            )
+                        } else {
+                            null
+                        }
+                    } ?: emptyList()
+
+                    // Mapear pasos
+                    val pasosList = (document.get("pasos") as? List<*>)?.mapNotNull { it as? String } ?: emptyList()
+
+                    // Crear y retornar la receta
+                    Receta(
                         id = document.id,
                         nombre = document.getString("nombre") ?: "",
                         descripcion = document.getString("descripcion") ?: "",
                         tiempoPreparacion = document.getLong("tiempo_preparacion")?.toInt() ?: 0,
                         categoria = document.getString("categoria") ?: "",
                         esFavorita = document.getBoolean("es_favorita") ?: false,
-                        imagenUrl = document.getString("imagen_url") ?: "" // ← Ahora es String, no nullable
+                        imagenUrl = document.getString("imagen_url") ?: "",
+                        ingredientes = ingredientesList,
+                        pasos = pasosList
                     )
-
-                    println("   - Receta mapeada - imagenUrl: '${receta.imagenUrl}'")
-                    receta
                 } catch (e: Exception) {
                     println("❌ ERROR mapeando receta ${document.id}: ${e.message}")
                     null
@@ -112,24 +129,21 @@ class FirebaseController {
                 "tiempo_preparacion" to receta.tiempoPreparacion,
                 "categoria" to receta.categoria,
                 "es_favorita" to receta.esFavorita,
-                "imagen_url" to receta.imagenUrl
+                "imagen_url" to receta.imagenUrl,
+                "ingredientes" to receta.ingredientes.map { ingrediente ->
+                    hashMapOf(
+                        "nombre" to ingrediente.nombre,
+                        "cantidad" to ingrediente.cantidad,
+                        "unidad" to ingrediente.unidad
+                    )
+                },
+                "pasos" to receta.pasos
             )
 
-            // DEBUG: Verificar qué datos se van a guardar
-            println("💾 DEBUG FirebaseController - insertarReceta:")
-            println("   - Nombre: ${receta.nombre}")
-            println("   - URL a guardar: '${receta.imagenUrl}'")
-            println("   - ¿URL vacía?: ${receta.imagenUrl.isEmpty()}")
-            println("   - Todos los datos: $recetaData")
-
             document.set(recetaData).await()
-
-            println("✅ FirebaseController - Receta guardada exitosamente")
-            println("   - ID generado: ${document.id}")
-
             return document.id
         } catch (e: Exception) {
-            println("❌ ERROR FirebaseController insertando receta: ${e.message}")
+            println("❌ ERROR insertando receta: ${e.message}")
             throw e
         }
     }
@@ -278,4 +292,5 @@ class FirebaseController {
     suspend fun agregarRecetaSimple(receta: Receta) {
         insertarReceta(receta)
     }
+
 }

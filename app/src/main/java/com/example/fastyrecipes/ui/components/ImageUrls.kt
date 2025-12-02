@@ -1,4 +1,3 @@
-
 package com.example.fastyrecipes.data
 
 object ImageUrls {

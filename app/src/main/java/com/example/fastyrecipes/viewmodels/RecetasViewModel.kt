@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import com.example.fastyrecipes.modelo.Ingrediente
 
 class RecetasViewModel(private val firebaseController: FirebaseController) : ViewModel() {
 
@@ -157,7 +158,15 @@ class RecetasViewModel(private val firebaseController: FirebaseController) : Vie
     }
 
     // FUNCIÓN CORREGIDA - ahora imagenUrl es obligatorio
-    fun agregarReceta(nombre: String, descripcion: String, tiempo: Int, categoria: String, imagenUrl: String) {
+// FUNCIÓN CORREGIDA
+    fun agregarReceta(
+        nombre: String,
+        tiempo: Int,
+        ingredientes: List<Ingrediente>,
+        pasos: List<String>,
+        categoria: String,
+        imagenUrl: String
+    ) {
         viewModelScope.launch {
             try {
                 // VALIDAR QUE LA URL NO ESTÉ VACÍA
@@ -168,24 +177,30 @@ class RecetasViewModel(private val firebaseController: FirebaseController) : Vie
 
                 val nuevaReceta = Receta(
                     nombre = nombre,
-                    descripcion = descripcion,
                     tiempoPreparacion = tiempo,
+                    ingredientes = ingredientes,
+                    pasos = pasos,
                     categoria = categoria,
                     esFavorita = false,
-                    imagenUrl = imagenUrl.trim()  // Asegurar que no tenga espacios
+                    imagenUrl = imagenUrl.trim()
                 )
 
-                // DEBUG: Verificar qué URL estamos guardando
+                // DEBUG: Verificar qué estamos guardando
                 println("🆕 DEBUG ViewModel - agregarReceta:")
                 println("   - Nombre: $nombre")
+                println("   - Tiempo: $tiempo min")
+                println("   - Ingredientes: ${ingredientes.size}")
+                ingredientes.forEachIndexed { index, ingrediente ->
+                    println("   - ${index + 1}. ${ingrediente.nombre}: ${ingrediente.cantidad} ${ingrediente.unidad}")
+                }
+                println("   - Pasos: ${pasos.size}")
+                println("   - Categoría: $categoria")
                 println("   - URL: $imagenUrl")
-                println("   - Longitud URL: ${imagenUrl.length}")
 
-                // Usar firebaseController en lugar de db directamente
                 val idGenerado = firebaseController.insertarReceta(nuevaReceta)
                 _error.value = null
 
-                println("✅ Receta agregada a Firestore via firebaseController")
+                println("✅ Receta agregada a Firestore")
                 println("   - ID generado: $idGenerado")
 
             } catch (e: Exception) {

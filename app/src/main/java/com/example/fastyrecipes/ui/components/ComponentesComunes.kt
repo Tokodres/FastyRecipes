@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.fastyrecipes.modelo.Receta
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.fastyrecipes.modelo.Ingrediente
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,7 +150,7 @@ fun RecetaCard(
 @Composable
 fun BottomNavigationBar(
     currentScreen: String,
-    onNavigateToInicio: () -> Unit,  // <-- NUEVO PARÁMETRO
+    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit
@@ -159,7 +160,7 @@ fun BottomNavigationBar(
             icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
             label = { Text("Inicio") },
             selected = currentScreen == "inicio",
-            onClick = onNavigateToInicio  // <-- USAR EL NUEVO PARÁMETRO
+            onClick = onNavigateToInicio  // ← AHORA SÍ FUNCIONA
         )
         NavigationBarItem(
             icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
@@ -179,6 +180,68 @@ fun BottomNavigationBar(
             selected = currentScreen == "perfil",
             onClick = onNavigateToPerfil
         )
-        // se deb cambiar las demas visdtas
+    }
+}
+
+
+// En ComponentesComunes.kt o en un nuevo archivo
+@Composable
+fun ListaDeIngredientes(
+    ingredientes: List<Ingrediente>,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Ingredientes (${ingredientes.size})",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
+        ingredientes.forEachIndexed { index, ingrediente ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Número
+                Text(
+                    text = "${index + 1}.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.width(24.dp)
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Detalles del ingrediente
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = ingrediente.nombre,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = if (ingrediente.unidad.isNotEmpty()) {
+                            "${ingrediente.cantidad} ${ingrediente.unidad}"
+                        } else {
+                            ingrediente.cantidad
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Línea divisoria (excepto para el último)
+            if (index < ingredientes.size - 1) {
+                Divider(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                )
+            }
+        }
     }
 }
