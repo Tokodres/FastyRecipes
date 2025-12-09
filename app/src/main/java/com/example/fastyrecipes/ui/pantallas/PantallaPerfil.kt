@@ -3,13 +3,10 @@ package com.example.fastyrecipes.ui.pantallas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,33 +17,37 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.example.fastyrecipes.modelo.Usuario
 import com.example.fastyrecipes.ui.components.BottomNavigationBar
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
+import androidx.compose.foundation.clickable
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaPerfil(
     viewModel: RecetasViewModel,
     onBack: () -> Unit,
-    onNavigateToInicio: () -> Unit,  // ← NUEVO PARÁMETRO
+    onNavigateToInicio: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
-    onNavigateToPerfil: () -> Unit
+    onNavigateToPerfil: () -> Unit,
+    onCerrarSesion: () -> Unit
 ) {
 
-    val perfilesUsuarios by viewModel.perfilesUsuarios.collectAsStateWithLifecycle()
-    val perfilActivo by viewModel.perfilActivo.collectAsStateWithLifecycle()
-
-    var showCrearPerfilDialog by remember { mutableStateOf(false) }
+    val usuarioActual by viewModel.usuarioActual.collectAsStateWithLifecycle()
+    val recetas by viewModel.recetas.collectAsStateWithLifecycle()
+    val esInvitado by viewModel.esInvitado.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Perfiles de Usuario",
+                        "Mi Perfil",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -61,19 +62,11 @@ fun PantallaPerfil(
         bottomBar = {
             BottomNavigationBar(
                 currentScreen = "perfil",
-                onNavigateToInicio = onNavigateToInicio,  // ← AHORA PASA LA FUNCIÓN
+                onNavigateToInicio = onNavigateToInicio,
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToFavoritos = onNavigateToFavoritos,
                 onNavigateToPerfil = onNavigateToPerfil
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCrearPerfilDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Crear nuevo perfil")
-            }
         }
     ) { paddingValues ->
         Column(
@@ -82,277 +75,249 @@ fun PantallaPerfil(
                 .padding(paddingValues)
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Perfil activo actual
-            if (perfilActivo != null) {
-                Text(
-                    text = "Perfil Activo",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                UsuarioCard(
-                    usuario = perfilActivo!!,
-                    esActivo = true,
-                    onSeleccionar = { },
-                    onEliminar = { }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // Lista de todos los perfiles
-            Text(
-                text = "Todos los Perfiles",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-
-            Text(
-                text = "Selecciona un perfil para usar la app",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
-            if (perfilesUsuarios.isEmpty()) {
+            if (esInvitado) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f),
+                    modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            Icons.Default.Person,
-                            contentDescription = "Sin perfiles",
+                            Icons.Default.Person, // CAMBIADO: PersonOutline no existe en Icons.Default
+                            contentDescription = "Invitado",
                             modifier = Modifier.size(64.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "No hay perfiles creados",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            "Estás usando la aplicación como invitado",
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Crea tu primer perfil para comenzar",
+                            "Inicia sesión para guardar tus recetas y preferencias",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = onCerrarSesion
+                        ) {
+                            Text("Iniciar Sesión")
+                        }
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(perfilesUsuarios) { usuario ->
-                        UsuarioCard(
-                            usuario = usuario,
-                            esActivo = usuario.id == perfilActivo?.id,
-                            onSeleccionar = { viewModel.seleccionarPerfil(usuario) },
-                            onEliminar = { viewModel.eliminarPerfil(usuario) }
-                        )
+                usuarioActual?.let { usuario ->
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(100.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (usuario.fotoPerfil.isNotEmpty()) {
+                                            AsyncImage( // CORREGIDO: Importado correctamente
+                                                model = usuario.fotoPerfil,
+                                                contentDescription = "Foto de perfil",
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        } else {
+                                            Icon(
+                                                Icons.Default.Person,
+                                                contentDescription = "Foto de perfil",
+                                                modifier = Modifier.size(50.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = usuario.nombre,
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = usuario.correo,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Miembro desde: ${formatearFecha(usuario.fechaRegistro)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "Mis Estadísticas",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(bottom = 16.dp)
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = recetas.size.toString(),
+                                                style = MaterialTheme.typography.headlineMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "Recetas",
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            val favoritasCount = recetas.count { receta ->
+                                                usuario.recetasGuardadas.contains(receta.id)
+                                            }
+                                            Text(
+                                                text = favoritasCount.toString(),
+                                                style = MaterialTheme.typography.headlineMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "Favoritas",
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = usuario.historialBusquedas.size.toString(),
+                                                style = MaterialTheme.typography.headlineMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "Búsquedas",
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    ListItem(
+                                        headlineContent = { Text("Configuración de la cuenta") },
+                                        leadingContent = {
+                                            Icon(
+                                                Icons.Default.Settings, // CAMBIADO
+                                                contentDescription = "Configuración"
+                                            )
+                                        }
+                                    )
+
+                                    Divider()
+
+                                    ListItem(
+                                        headlineContent = { Text("Cambiar contraseña") },
+                                        leadingContent = {
+                                            Icon(
+                                                Icons.Default.Lock, // CAMBIADO
+                                                contentDescription = "Contraseña"
+                                            )
+                                        },
+                                        modifier = Modifier.clickable { /* Cambiar contraseña */ } // CORREGIDO
+                                    )
+
+                                    Divider()
+
+                                    ListItem(
+                                        headlineContent = { Text("Notificaciones") },
+                                        leadingContent = {
+                                            Icon(
+                                                Icons.Default.Notifications, // CAMBIADO
+                                                contentDescription = "Notificaciones"
+                                            )
+                                        },
+                                        modifier = Modifier.clickable { /* Configurar notificaciones */ } // CORREGIDO
+                                    )
+
+                                    Divider()
+
+                                    ListItem(
+                                        headlineContent = {
+                                            Text(
+                                                "Cerrar Sesión",
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        leadingContent = {
+                                            Icon(
+                                                Icons.Default.Logout, // CAMBIADO
+                                                contentDescription = "Cerrar sesión",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        },
+                                        modifier = Modifier.clickable { onCerrarSesion() } // CORREGIDO
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
-        }
-
-        // Dialog para crear nuevo perfil
-        if (showCrearPerfilDialog) {
-            DialogCrearPerfil(
-                onConfirmar = { nombre, correo ->
-                    viewModel.crearNuevoPerfil(nombre, correo)
-                    showCrearPerfilDialog = false
-                },
-                onCancelar = { showCrearPerfilDialog = false }
-            )
         }
     }
 }
 
-@Composable
-fun UsuarioCard(
-    usuario: Usuario,
-    esActivo: Boolean,
-    onSeleccionar: () -> Unit,
-    onEliminar: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (esActivo) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar del usuario
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Información del usuario
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = usuario.nombre,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = usuario.correo,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Estadísticas del usuario
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = if (usuario.recetasGuardadas.isEmpty()) {
-                            "📖 Sin recetas"
-                        } else {
-                            "📖 ${usuario.recetasGuardadas.size} recetas"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = if (usuario.historialBusquedas.isEmpty()) {
-                            "🔍 Sin búsquedas"
-                        } else {
-                            "🔍 ${usuario.historialBusquedas.size} búsquedas"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (esActivo) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "✓ Perfil activo",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            // Botones de acción
-            if (!esActivo) {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // Botón seleccionar compacto
-                    TextButton(
-                        onClick = onSeleccionar,
-                        modifier = Modifier.height(32.dp)
-                    ) {
-                        Text("Usar", style = MaterialTheme.typography.labelMedium)
-                    }
-
-                    // Botón eliminar compacto
-                    TextButton(
-                        onClick = onEliminar,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                        modifier = Modifier.height(28.dp)
-                    ) {
-                        Text("Eliminar", style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DialogCrearPerfil(
-    onConfirmar: (String, String) -> Unit,
-    onCancelar: () -> Unit
-) {
-    var nombre by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onCancelar,
-        title = { Text("Crear Nuevo Perfil") },
-        text = {
-            Column {
-                Text(
-                    text = "Crea un nuevo perfil para usar la aplicación",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    label = { Text("Nombre del perfil") },
-                    placeholder = { Text("Ej: Chef María") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = correo,
-                    onValueChange = { correo = it },
-                    label = { Text("Correo electrónico") },
-                    placeholder = { Text("Ej: maria@cocina.com") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirmar(nombre, correo) },
-                enabled = nombre.isNotEmpty() && correo.isNotEmpty()
-            ) {
-                Text("Crear Perfil")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancelar) {
-                Text("Cancelar")
-            }
-        }
-    )
+// Función auxiliar para formatear fecha
+private fun formatearFecha(timestamp: Long): String {
+    val date = Date(timestamp)
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    return formatter.format(date)
 }
 
 @Preview(showBackground = true)
@@ -362,9 +327,11 @@ fun PreviewPantallaPerfil() {
         // PantallaPerfil(
         //     viewModel = ...,
         //     onBack = {},
+        //     onNavigateToInicio = {},
         //     onNavigateToSearch = {},
         //     onNavigateToFavoritos = {},
-        //     onNavigateToPerfil = {}
+        //     onNavigateToPerfil = {},
+        //     onCerrarSesion = {}
         // )
     }
 }
@@ -374,20 +341,15 @@ fun PreviewPantallaPerfil() {
 fun PreviewUsuarioCard() {
     FastyRecipesTheme {
         val usuarioEjemplo = Usuario(
-            id = 1,
+            id = "1",
             nombre = "Chef María",
             correo = "maria@cocina.com",
-            contraseña = "",
-            recetasGuardadas = emptyList(),
-            historialBusquedas = listOf("pollo", "postres")
+            recetasGuardadas = listOf("receta1", "receta2"), // CORREGIDO
+            historialBusquedas = listOf("pollo", "postres") // CORREGIDO
         )
 
-        UsuarioCard(
-            usuario = usuarioEjemplo,
-            esActivo = true,
-            onSeleccionar = { },
-            onEliminar = { }
-        )
+        // UsuarioCard ya no existe en este archivo
+        // Comentar o eliminar esta llamada
     }
 }
 
@@ -396,19 +358,14 @@ fun PreviewUsuarioCard() {
 fun PreviewUsuarioCardInactivo() {
     FastyRecipesTheme {
         val usuarioEjemplo = Usuario(
-            id = 1,
+            id = "1",
             nombre = "Chef María",
             correo = "maria@cocina.com",
-            contraseña = "",
-            recetasGuardadas = emptyList(),
-            historialBusquedas = listOf("pollo", "postres")
+            recetasGuardadas = listOf("receta1", "receta2"), // CORREGIDO
+            historialBusquedas = listOf("pollo", "postres") // CORREGIDO
         )
 
-        UsuarioCard(
-            usuario = usuarioEjemplo,
-            esActivo = false,
-            onSeleccionar = { },
-            onEliminar = { }
-        )
+        // UsuarioCard ya no existe en este archivo
+        // Comentar o eliminar esta llamada
     }
 }

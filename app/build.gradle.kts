@@ -5,16 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.fastyrecipes"  // CAMBIAR A ESTO
+    namespace = "com.example.fastyrecipes"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.fastyrecipes"  // CAMBIAR A ESTO
+        applicationId = "com.example.fastyrecipes"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -42,7 +41,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.7" // Mantener esta versión
+        kotlinCompilerExtensionVersion = "1.5.7"
     }
     packaging {
         resources {
@@ -57,7 +56,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.activity:activity-compose:1.8.0")
 
-    // Compose - ACTUALIZAR estas dependencias
+    // Compose
     implementation(platform("androidx.compose:compose-bom:2023.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -65,11 +64,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.navigation:navigation-compose:2.7.3")
 
-        // ... tus dependencias existentes
-
-        // Coil para cargar imágenes desde URLs
-    implementation("io.coil-kt:coil-compose:2.4.0")
-    implementation("io.coil-kt:coil:2.4.0")
+    // Coil para imágenes (SOLO UNA VEZ)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
@@ -79,10 +76,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
 
-    // Firebase
+    // Firebase - SOLO ESTAS LÍNEAS (¡ELIMINA LAS OTRAS!)
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
-    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
 
     // Test
@@ -93,7 +90,4 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-    implementation("io.coil-kt:coil-compose:2.6.0")
-    implementation("androidx.compose.material:material-icons-extended:1.5.4")
-    implementation("io.coil-kt:coil-compose:2.4.0")
 }
