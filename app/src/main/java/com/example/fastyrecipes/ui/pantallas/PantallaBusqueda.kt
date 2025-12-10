@@ -35,19 +35,26 @@ fun PantallaBusqueda(
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val categorias by viewModel.categoriasUnicas.collectAsStateWithLifecycle()
 
+    // Obtener textos traducidos
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Buscar Recetas",
+                        texto("buscar_recetas"), // CAMBIADO: Usar traducción
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = texto("volver")) // CAMBIADO: Usar traducción
                     }
                 }
             )
@@ -70,7 +77,7 @@ fun PantallaBusqueda(
 
             // Categorías - más destacadas
             Text(
-                text = "Categorías",
+                text = texto("categorias"), // CAMBIADO: Usar traducción
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -90,7 +97,7 @@ fun PantallaBusqueda(
             // Resultados de búsqueda
             if (searchText.isNotEmpty() || selectedCategory != null) {
                 Text(
-                    text = "Resultados (${recetas.size})",
+                    text = "${texto("resultados")} (${recetas.size})", // CAMBIADO: Usar traducción
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(horizontal = 16.dp)
@@ -113,19 +120,19 @@ fun PantallaBusqueda(
                     ) {
                         Icon(
                             Icons.Default.Search,
-                            contentDescription = "Sin resultados",
+                            contentDescription = texto("sin_resultados"), // CAMBIADO: Usar traducción
                             modifier = Modifier.size(64.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "No se encontraron recetas",
+                            texto("sin_resultados"), // CAMBIADO: Usar traducción
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (searchText.isNotEmpty()) {
                             Text(
-                                "para \"$searchText\"",
+                                text = "${texto("para_busqueda").replace("%s", searchText)}", // CAMBIADO: Usar traducción
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -152,7 +159,6 @@ fun PantallaBusqueda(
     }
 }
 
-// FALTA ESTA FUNCIÓN - AGREGALA AL FINAL DEL ARCHIVO
 @Composable
 fun CategoriasRow(
     categorias: List<String>,
