@@ -248,6 +248,7 @@ fun PantallaPerfil(
                             }
                         }
 
+                        // Sección de configuración simplificada
                         item {
                             Card(
                                 modifier = Modifier
@@ -257,19 +258,6 @@ fun PantallaPerfil(
                                 Column(
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 ) {
-                                    // Título de la sección (sin acción)
-                                    ListItem(
-                                        headlineContent = { Text(texto("configuracion_cuenta")) },
-                                        leadingContent = {
-                                            Icon(
-                                                Icons.Default.Settings,
-                                                contentDescription = texto("configuracion")
-                                            )
-                                        }
-                                    )
-
-                                    Divider()
-
                                     // Opción: Cambiar idioma
                                     ListItem(
                                         headlineContent = {
@@ -297,32 +285,7 @@ fun PantallaPerfil(
 
                                     Divider()
 
-                                    ListItem(
-                                        headlineContent = { Text(texto("cambiar_contrasena")) },
-                                        leadingContent = {
-                                            Icon(
-                                                Icons.Default.Lock,
-                                                contentDescription = texto("contrasena")
-                                            )
-                                        },
-                                        modifier = Modifier.clickable { /* Cambiar contraseña */ }
-                                    )
-
-                                    Divider()
-
-                                    ListItem(
-                                        headlineContent = { Text(texto("notificaciones")) },
-                                        leadingContent = {
-                                            Icon(
-                                                Icons.Default.Notifications,
-                                                contentDescription = texto("notificaciones")
-                                            )
-                                        },
-                                        modifier = Modifier.clickable { /* Configurar notificaciones */ }
-                                    )
-
-                                    Divider()
-
+                                    // Opción: Cerrar sesión
                                     ListItem(
                                         headlineContent = {
                                             Text(

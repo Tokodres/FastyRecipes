@@ -21,6 +21,7 @@ import com.example.fastyrecipes.ui.components.RecetaImage
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
 import com.example.fastyrecipes.viewmodels.RecetasViewModel
 import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +39,24 @@ fun PantallaPrincipal(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    // Obtener mensajes de notificación
+    val notificationMessage by viewModel.notificationMessage.collectAsStateWithLifecycle()
+
+    // Estado para el Snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Mostrar notificación cuando haya un mensaje
+    LaunchedEffect(notificationMessage) {
+        notificationMessage?.let { message ->
+            scope.launch {
+                snackbarHostState.showSnackbar(message)
+                // Limpiar mensaje después de mostrar
+                viewModel.clearNotification()
+            }
+        }
+    }
 
     fun texto(key: String): String {
         return textosTraducidos[key] ?: key
@@ -75,6 +94,16 @@ fun PantallaPrincipal(
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(Icons.Default.Add, contentDescription = texto("crear_receta"))
+            }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { snackbarData ->
+                Snackbar(
+                    modifier = Modifier.padding(8.dp),
+                    content = {
+                        Text(text = snackbarData.visuals.message)
+                    }
+                )
             }
         }
     ) { paddingValues ->

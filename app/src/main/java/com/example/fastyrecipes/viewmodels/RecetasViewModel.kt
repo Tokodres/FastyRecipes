@@ -29,6 +29,15 @@ class RecetasViewModel(
     private val _esInvitado = MutableStateFlow(false)
     val esInvitado: StateFlow<Boolean> = _esInvitado.asStateFlow()
 
+    // ========== ESTADO DE NOTIFICACIÓN ==========
+    private val _notificationMessage = MutableStateFlow<String?>(null)
+    val notificationMessage: StateFlow<String?> = _notificationMessage.asStateFlow()
+
+    // Función para limpiar notificación
+    fun clearNotification() {
+        _notificationMessage.value = null
+    }
+
     // ========== ESTADO DE IDIOMA ==========
     private val _idiomaActual = MutableStateFlow("Español")
     val idiomaActual: StateFlow<String> = _idiomaActual.asStateFlow()
@@ -116,7 +125,6 @@ class RecetasViewModel(
         println("🟢 RecetasViewModel - Inicializando...")
         verificarAutenticacionInicial()
         cargarDatosIniciales()
-        // Cargaremos el idioma cuando tengamos contexto en MainActivity
     }
 
     private fun verificarAutenticacionInicial() {
@@ -262,6 +270,10 @@ class RecetasViewModel(
                 "mostrar_contraseña" to "Show password",
                 "terminos_condiciones" to "By signing in you accept our Terms and Conditions",
 
+                // Notificaciones de favoritos
+                "receta_agregada_favoritos" to "Recipe added to favorites ✓",
+                "receta_eliminada_favoritos" to "Recipe removed from favorites",
+
                 // Navegación
                 "inicio" to "Home",
                 "favoritos" to "Favorites",
@@ -304,7 +316,7 @@ class RecetasViewModel(
                 // Pantalla Perfil
                 "mi_perfil" to "My Profile",
                 "mis_estadisticas" to "My Statistics",
-                "recetas" to "Recipes",
+                "recetas" to "Recetas",
                 "favoritas" to "Favorites",
                 "busquedas" to "Searches",
                 "configuracion_cuenta" to "Account Settings",
@@ -407,6 +419,10 @@ class RecetasViewModel(
                 "cargando" to "Cargando",
                 "mostrar_contraseña" to "Mostrar contraseña",
                 "terminos_condiciones" to "Al iniciar sesión aceptas nuestros Términos y Condiciones",
+
+                // Notificaciones de favoritos
+                "receta_agregada_favoritos" to "Receta agregada a favoritos ✓",
+                "receta_eliminada_favoritos" to "Receta eliminada de favoritos",
 
                 // Navegación
                 "inicio" to "Inicio",
@@ -542,7 +558,7 @@ class RecetasViewModel(
         _textosTraducidos.value = traducciones
     }
 
-    // Función para obtener texto traducido (opcional, se puede usar en lugar de la función local en Composable)
+    // Función para obtener texto traducido
     fun obtenerTexto(key: String): String {
         return _textosTraducidos.value[key] ?: key
     }
@@ -691,6 +707,13 @@ class RecetasViewModel(
             try {
                 if (_esInvitado.value) {
                     firebaseController.marcarComoFavorita(receta.id, !receta.esFavorita)
+
+                    // Mostrar notificación
+                    _notificationMessage.value = if (!receta.esFavorita) {
+                        obtenerTexto("receta_agregada_favoritos")
+                    } else {
+                        obtenerTexto("receta_eliminada_favoritos")
+                    }
                 } else {
                     val usuario = _usuarioActual.value
                     if (usuario != null) {
@@ -703,6 +726,13 @@ class RecetasViewModel(
                         val usuarioActualizado = usuario.copy(recetasGuardadas = nuevasRecetasGuardadas)
                         firebaseAuthController.guardarUsuario(usuarioActualizado)
                         _usuarioActual.value = usuarioActualizado
+
+                        // Mostrar notificación
+                        _notificationMessage.value = if (nuevasRecetasGuardadas.contains(receta.id)) {
+                            obtenerTexto("receta_agregada_favoritos")
+                        } else {
+                            obtenerTexto("receta_eliminada_favoritos")
+                        }
                     }
                 }
                 _error.value = null
