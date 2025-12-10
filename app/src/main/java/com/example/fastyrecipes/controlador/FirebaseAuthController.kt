@@ -29,10 +29,12 @@ class FirebaseAuthController {
                 id = userId,
                 nombre = nombre,
                 correo = email,
-                contraseña = "", // No almacenamos la contraseña en Firestore
+                contraseña = "",
                 fechaRegistro = System.currentTimeMillis(),
                 recetasGuardadas = emptyList(),
-                historialBusquedas = emptyList()
+                historialBusquedas = emptyList(),
+                fotoPerfil = "",
+                idiomaPreferido = "es" // NUEVO: idioma por defecto
             )
 
             // 3. Guardar en Firestore
@@ -121,7 +123,9 @@ class FirebaseAuthController {
                 contraseña = "",
                 fechaRegistro = System.currentTimeMillis(),
                 recetasGuardadas = emptyList(),
-                historialBusquedas = emptyList()
+                historialBusquedas = emptyList(),
+                fotoPerfil = "",
+                idiomaPreferido = "es"
             )
         } else {
             null
@@ -136,6 +140,19 @@ class FirebaseAuthController {
         } catch (e: Exception) {
             println("❌ Error guardando usuario: ${e.message}")
             throw e
+        }
+    }
+
+    // GUARDAR IDIOMA DE USUARIO
+    suspend fun guardarIdiomaUsuario(usuarioId: String, idiomaCodigo: String): Result<Unit> {
+        return try {
+            usuariosCollection.document(usuarioId)
+                .update("idiomaPreferido", idiomaCodigo)
+                .await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            println("❌ Error guardando idioma: ${e.message}")
+            Result.failure(e)
         }
     }
 

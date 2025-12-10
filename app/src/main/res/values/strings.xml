@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">FastyRecipes</string>
+    <string name="mi_perfil">Mi Perfil</string>
+    <string name="mis_estadisticas">Mis Estadísticas</string>
+    <string name="recetas">Recetas</string>
+    <string name="favoritas">Favoritas</string>
+    <string name="busquedas">Búsquedas</string>
+    <string name="configuracion_cuenta">Configuración de la cuenta</string>
+    <string name="cambiar_contrasena">Cambiar contraseña</string>
+    <string name="notificaciones">Notificaciones</string>
+    <string name="cerrar_sesion">Cerrar Sesión</string>
+    <string name="seleccionar_idioma">Seleccionar idioma</string>
+    <string name="idioma">Idioma</string>
+    <string name="cerrar">Cerrar</string>
+    <string name="inicio">Inicio</string>
+    <string name="buscar">Buscar</string>
+    <string name="favoritos">Favoritos</string>
+    <string name="perfil">Perfil</string>
+    <string name="crear_receta">Crear Receta</string>
+    <string name="guardar">Guardar</string>
+    <string name="cancelar">Cancelar</string>
 </resources>

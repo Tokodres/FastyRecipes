@@ -22,17 +22,26 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fastyrecipes.R
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
+import com.example.fastyrecipes.viewmodels.RecetasViewModel
 
 @Composable
 fun PantallaAutenticacion(
+    viewModel: RecetasViewModel,
     onIniciarSesion: (String, String) -> Unit,
     onRegistrarse: (String, String, String) -> Unit,
     onIniciarComoInvitado: () -> Unit,
     isLoading: Boolean = false,
     errorMessage: String? = null
 ) {
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     var esModoRegistro by remember { mutableStateOf(false) }
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
@@ -71,13 +80,13 @@ fun PantallaAutenticacion(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Fasty Recipes",
+                    text = texto("app_name"),
                     style = MaterialTheme.typography.headlineLarge,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Descubre y comparte recetas deliciosas",
+                    text = texto("app_slogan"),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.8f)
                 )
@@ -94,7 +103,7 @@ fun PantallaAutenticacion(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = if (esModoRegistro) "Crear Cuenta" else "Iniciar Sesión",
+                        text = if (esModoRegistro) texto("registrarse_titulo") else texto("iniciar_sesion_titulo"),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -113,9 +122,9 @@ fun PantallaAutenticacion(
                         OutlinedTextField(
                             value = nombre,
                             onValueChange = { nombre = it },
-                            label = { Text("Nombre completo") },
+                            label = { Text(texto("nombre_usuario")) },
                             leadingIcon = {
-                                Icon(Icons.Default.Person, contentDescription = "Nombre")
+                                Icon(Icons.Default.Person, contentDescription = texto("nombre_usuario"))
                             },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -126,9 +135,9 @@ fun PantallaAutenticacion(
                     OutlinedTextField(
                         value = correo,
                         onValueChange = { correo = it },
-                        label = { Text("Correo electrónico") },
+                        label = { Text(texto("correo_electronico")) },
                         leadingIcon = {
-                            Icon(Icons.Default.Email, contentDescription = "Correo")
+                            Icon(Icons.Default.Email, contentDescription = texto("correo_electronico"))
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth(),
@@ -139,15 +148,15 @@ fun PantallaAutenticacion(
                     OutlinedTextField(
                         value = contraseña,
                         onValueChange = { contraseña = it },
-                        label = { Text("Contraseña") },
+                        label = { Text(texto("contraseña")) },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = "Contraseña")
+                            Icon(Icons.Default.Lock, contentDescription = texto("contraseña"))
                         },
                         trailingIcon = {
                             IconButton(onClick = { mostrarContraseña = !mostrarContraseña }) {
                                 Icon(
                                     if (mostrarContraseña) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                    contentDescription = "Mostrar contraseña"
+                                    contentDescription = texto("mostrar_contraseña")
                                 )
                             }
                         },
@@ -162,15 +171,15 @@ fun PantallaAutenticacion(
                         OutlinedTextField(
                             value = confirmarContraseña,
                             onValueChange = { confirmarContraseña = it },
-                            label = { Text("Confirmar contraseña") },
+                            label = { Text(texto("confirmar_contraseña")) },
                             leadingIcon = {
-                                Icon(Icons.Default.Lock, contentDescription = "Confirmar contraseña")
+                                Icon(Icons.Default.Lock, contentDescription = texto("confirmar_contraseña"))
                             },
                             trailingIcon = {
                                 IconButton(onClick = { mostrarContraseña = !mostrarContraseña }) {
                                     Icon(
                                         if (mostrarContraseña) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = "Mostrar contraseña"
+                                        contentDescription = texto("mostrar_contraseña")
                                     )
                                 }
                             },
@@ -207,7 +216,7 @@ fun PantallaAutenticacion(
                             )
                         } else {
                             Text(
-                                text = if (esModoRegistro) "Registrarse" else "Iniciar Sesión",
+                                text = if (esModoRegistro) texto("registrarse_titulo") else texto("iniciar_sesion_titulo"),
                                 fontSize = 16.sp
                             )
                         }
@@ -226,8 +235,7 @@ fun PantallaAutenticacion(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = if (esModoRegistro) "¿Ya tienes cuenta? Inicia sesión"
-                            else "¿No tienes cuenta? Regístrate",
+                            text = if (esModoRegistro) texto("ya_tienes_cuenta") else texto("no_tienes_cuenta"),
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -239,9 +247,9 @@ fun PantallaAutenticacion(
                         onClick = onIniciarComoInvitado,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.PersonOutline, contentDescription = "Invitado")
+                        Icon(Icons.Default.PersonOutline, contentDescription = texto("iniciar_como_invitado"))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Continuar como invitado")
+                        Text(texto("iniciar_como_invitado"))
                     }
                 }
             }
@@ -249,7 +257,7 @@ fun PantallaAutenticacion(
             // Información adicional
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                text = "Al iniciar sesión aceptas nuestros Términos y Condiciones",
+                text = texto("terminos_condiciones"),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.6f),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -262,11 +270,12 @@ fun PantallaAutenticacion(
 @Composable
 fun PreviewPantallaAutenticacion() {
     FastyRecipesTheme {
-        PantallaAutenticacion(
-            onIniciarSesion = { _, _ -> },
-            onRegistrarse = { _, _, _ -> },
-            onIniciarComoInvitado = {},
-            isLoading = false
-        )
+        // PantallaAutenticacion(
+        //     viewModel = ...,
+        //     onIniciarSesion = { _, _ -> },
+        //     onRegistrarse = { _, _, _ -> },
+        //     onIniciarComoInvitado = {},
+        //     isLoading = false
+        // )
     }
 }

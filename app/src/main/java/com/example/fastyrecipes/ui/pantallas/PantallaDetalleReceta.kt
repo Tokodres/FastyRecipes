@@ -17,38 +17,47 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.fastyrecipes.modelo.Receta
 import com.example.fastyrecipes.ui.components.ListaDeIngredientes
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
+import com.example.fastyrecipes.viewmodels.RecetasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaDetalleReceta(
+    viewModel: RecetasViewModel,
     receta: Receta,
     onBack: () -> Unit,
     onToggleFavorito: () -> Unit
 ) {
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Detalle de Receta",
+                        texto("detalle_receta"),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = texto("volver"))
                     }
                 },
                 actions = {
                     IconButton(onClick = onToggleFavorito) {
                         Icon(
                             if (receta.esFavorita) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (receta.esFavorita) "Quitar de favoritos" else "Agregar a favoritos",
+                            contentDescription = if (receta.esFavorita) texto("quitar_favoritos") else texto("agregar_favoritos"),
                             tint = if (receta.esFavorita) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -104,15 +113,15 @@ fun PantallaDetalleReceta(
                             ) {
                                 Icon(
                                     Icons.Default.Schedule,
-                                    contentDescription = "Tiempo",
+                                    contentDescription = texto("tiempo"),
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
-                                    text = "Tiempo",
+                                    text = texto("tiempo"),
                                     style = MaterialTheme.typography.labelSmall
                                 )
                                 Text(
-                                    text = "${receta.tiempoPreparacion} min",
+                                    text = "${receta.tiempoPreparacion} ${texto("minutos")}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -134,7 +143,7 @@ fun PantallaDetalleReceta(
                                     style = MaterialTheme.typography.headlineSmall
                                 )
                                 Text(
-                                    text = "Categoría",
+                                    text = texto("categoria"),
                                     style = MaterialTheme.typography.labelSmall
                                 )
                                 Text(
@@ -160,7 +169,7 @@ fun PantallaDetalleReceta(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "📝 Ingredientes",
+                            text = "📝 ${texto("ingredientes")}",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 12.dp)
@@ -174,7 +183,7 @@ fun PantallaDetalleReceta(
                             )
                         } else {
                             Text(
-                                text = "No se especificaron ingredientes.",
+                                text = texto("sin_ingredientes"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -194,7 +203,7 @@ fun PantallaDetalleReceta(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "👨‍🍳 Preparación",
+                            text = "👨‍🍳 ${texto("preparacion")}",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 12.dp)
@@ -227,7 +236,7 @@ fun PantallaDetalleReceta(
                                         }
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Text(
-                                            text = "Paso ${index + 1}",
+                                            text = "${texto("paso")} ${index + 1}",
                                             style = MaterialTheme.typography.titleSmall,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -242,7 +251,7 @@ fun PantallaDetalleReceta(
                             }
                         } else {
                             Text(
-                                text = "No hay pasos de preparación disponibles.",
+                                text = texto("sin_pasos_preparacion"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

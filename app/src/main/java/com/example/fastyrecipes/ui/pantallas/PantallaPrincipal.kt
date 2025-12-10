@@ -31,26 +31,31 @@ fun PantallaPrincipal(
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit,
     onNavigateToCrearReceta: () -> Unit,
-    onNavigateToDetalleReceta: (Receta) -> Unit  // NUEVO PARÁMETRO
+    onNavigateToDetalleReceta: (Receta) -> Unit
 ) {
 
     val recetas by viewModel.recetas.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Fasty Recipes",
+                        texto("app_name"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 actions = {
                     IconButton(onClick = onNavigateToSearch) {
-                        Icon(Icons.Default.Search, contentDescription = "Buscar")
+                        Icon(Icons.Default.Search, contentDescription = texto("buscar"))
                     }
                 }
             )
@@ -69,7 +74,7 @@ fun PantallaPrincipal(
                 onClick = onNavigateToCrearReceta,
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Crear receta")
+                Icon(Icons.Default.Add, contentDescription = texto("crear_receta"))
             }
         }
     ) { paddingValues ->
@@ -86,9 +91,9 @@ fun PantallaPrincipal(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Icon(Icons.Default.Refresh, contentDescription = "Recargar")
+                Icon(Icons.Default.Refresh, contentDescription = texto("recargar"))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Recargar Datos")
+                Text(texto("recargar_datos"))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -114,19 +119,19 @@ fun PantallaPrincipal(
                         ) {
                             Icon(
                                 Icons.Default.FavoriteBorder,
-                                contentDescription = "Sin recetas",
+                                contentDescription = texto("sin_recetas"),
                                 modifier = Modifier.size(64.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                "No hay recetas disponibles",
+                                texto("sin_recetas"),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                "Agrega algunas recetas para comenzar",
+                                texto("agrega_recetas_comenzar"),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -135,7 +140,7 @@ fun PantallaPrincipal(
                 } else {
                     // Contador de recetas
                     Text(
-                        text = "Tienes ${recetas.size} recetas",
+                        text = texto("tienes_recetas").replace("%d", recetas.size.toString()),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -152,7 +157,7 @@ fun PantallaPrincipal(
                                 receta = receta,
                                 onToggleFavorito = { viewModel.toggleFavorito(receta) },
                                 onEliminar = { viewModel.eliminarReceta(receta) },
-                                onVerDetalle = { onNavigateToDetalleReceta(receta) }  // NUEVO
+                                onVerDetalle = { onNavigateToDetalleReceta(receta) }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -170,19 +175,19 @@ fun PantallaPrincipal(
     }
 }
 
-// Componente original de RecetaItem (con eliminar y favoritos) - MODIFICADO
+// Componente original de RecetaItem (con eliminar y favoritos)
 @Composable
 fun RecetaItemOriginal(
     receta: Receta,
     onToggleFavorito: () -> Unit,
     onEliminar: () -> Unit,
-    onVerDetalle: () -> Unit  // NUEVO PARÁMETRO
+    onVerDetalle: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onVerDetalle() },  // HACE CLICKABLE TODA LA TARJETA
+            .clickable { onVerDetalle() },
         colors = CardDefaults.cardColors(
             containerColor = if (receta.esFavorita) {
                 MaterialTheme.colorScheme.secondaryContainer
@@ -198,7 +203,7 @@ fun RecetaItemOriginal(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .clickable { onVerDetalle() }  // TAMBIÉN LA IMAGEN ES CLICKABLE
+                    .clickable { onVerDetalle() }
             ) {
                 RecetaImage(
                     imageUrl = receta.imagenUrl,
@@ -220,7 +225,7 @@ fun RecetaItemOriginal(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { onVerDetalle() }  // EL NOMBRE TAMBIÉN ES CLICKABLE
+                            .clickable { onVerDetalle() }
                     )
 
                     // Botón de favorito
@@ -243,7 +248,7 @@ fun RecetaItemOriginal(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
                         .padding(vertical = 8.dp)
-                        .clickable { onVerDetalle() }  // LA DESCRIPCIÓN TAMBIÉN ES CLICKABLE
+                        .clickable { onVerDetalle() }
                 )
 
                 // Información de tiempo y categoría

@@ -20,14 +20,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.fastyrecipes.data.ImageUrls
 import com.example.fastyrecipes.modelo.Ingrediente
 import com.example.fastyrecipes.ui.theme.FastyRecipesTheme
+import com.example.fastyrecipes.viewmodels.RecetasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaCrearReceta(
+    viewModel: RecetasViewModel,
     onGuardar: (
         nombre: String,
         tiempo: Int,
@@ -38,6 +41,12 @@ fun PantallaCrearReceta(
     ) -> Unit,
     onCancelar: () -> Unit
 ) {
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     var nombre by remember { mutableStateOf("") }
     var tiempo by remember { mutableStateOf("") }
     var categoria by remember { mutableStateOf("") }
@@ -61,11 +70,11 @@ fun PantallaCrearReceta(
                 title = {
                     Text(
                         when (step) {
-                            1 -> "Paso 1: Información Básica"
-                            2 -> "Paso 2: Ingredientes"
-                            3 -> "Paso 3: Pasos de Preparación"
-                            4 -> "Paso 4: Categoría e Imagen"
-                            else -> "Crear Receta"
+                            1 -> "${texto("paso")} 1: ${texto("informacion_basica")}"
+                            2 -> "${texto("paso")} 2: ${texto("ingredientes")}"
+                            3 -> "${texto("paso")} 3: ${texto("pasos")}"
+                            4 -> "${texto("paso")} 4: ${texto("categoria_imagen")}"
+                            else -> texto("crear_receta")
                         },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
@@ -79,7 +88,7 @@ fun PantallaCrearReceta(
                             onCancelar()
                         }
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = texto("volver"))
                     }
                 },
                 actions = {
@@ -102,7 +111,7 @@ fun PantallaCrearReceta(
                                     categoria.isNotEmpty() &&
                                     imagenUrl.isNotEmpty()
                         ) {
-                            Text("Guardar")
+                            Text(texto("guardar"))
                         }
                     } else {
                         Button(
@@ -114,7 +123,7 @@ fun PantallaCrearReceta(
                                 else -> false
                             }
                         ) {
-                            Text("Siguiente")
+                            Text(texto("siguiente"))
                         }
                     }
                 }
@@ -129,6 +138,7 @@ fun PantallaCrearReceta(
         ) {
             when (step) {
                 1 -> PasoInformacionBasica(
+                    textosTraducidos = textosTraducidos,
                     nombre = nombre,
                     tiempo = tiempo,
                     onNombreChange = { nombre = it },
@@ -136,6 +146,7 @@ fun PantallaCrearReceta(
                 )
 
                 2 -> PasoIngredientes(
+                    textosTraducidos = textosTraducidos,
                     ingredientes = ingredientes,
                     nuevoNombre = nuevoIngredienteNombre,
                     nuevoCantidad = nuevoIngredienteCantidad,
@@ -159,6 +170,7 @@ fun PantallaCrearReceta(
                 )
 
                 3 -> PasoPreparacion(
+                    textosTraducidos = textosTraducidos,
                     pasos = pasos,
                     nuevoPaso = nuevoPaso,
                     onPasoChange = { nuevoPaso = it },
@@ -174,6 +186,7 @@ fun PantallaCrearReceta(
                 )
 
                 4 -> PasoFinal(
+                    textosTraducidos = textosTraducidos,
                     categoria = categoria,
                     imagenUrl = imagenUrl,
                     onCategoriaChange = {
@@ -196,11 +209,16 @@ fun PantallaCrearReceta(
 
 @Composable
 fun PasoInformacionBasica(
+    textosTraducidos: Map<String, String>,
     nombre: String,
     tiempo: String,
     onNombreChange: (String) -> Unit,
     onTiempoChange: (String) -> Unit
 ) {
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -213,7 +231,7 @@ fun PasoInformacionBasica(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "Información Básica",
+                        texto("informacion_basica"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -222,8 +240,8 @@ fun PasoInformacionBasica(
                     OutlinedTextField(
                         value = nombre,
                         onValueChange = onNombreChange,
-                        label = { Text("Nombre de la receta *") },
-                        placeholder = { Text("Ej: Pollo al horno con patatas") },
+                        label = { Text("${texto("nombre_receta")} *") },
+                        placeholder = { Text(texto("ej_nombre_receta")) },
                         modifier = Modifier.fillMaxWidth(),
                         isError = nombre.isEmpty()
                     )
@@ -233,8 +251,8 @@ fun PasoInformacionBasica(
                     OutlinedTextField(
                         value = tiempo,
                         onValueChange = onTiempoChange,
-                        label = { Text("Tiempo de preparación (minutos) *") },
-                        placeholder = { Text("Ej: 60") },
+                        label = { Text("${texto("tiempo_preparacion")} *") },
+                        placeholder = { Text(texto("ej_tiempo")) },
                         modifier = Modifier.fillMaxWidth(),
                         isError = tiempo.isEmpty() || tiempo.toIntOrNull() ?: 0 <= 0
                     )
@@ -246,6 +264,7 @@ fun PasoInformacionBasica(
 
 @Composable
 fun PasoIngredientes(
+    textosTraducidos: Map<String, String>,
     ingredientes: List<Ingrediente>,
     nuevoNombre: String,
     nuevoCantidad: String,
@@ -255,6 +274,10 @@ fun PasoIngredientes(
     onAddIngrediente: () -> Unit,
     onRemoveIngrediente: (Ingrediente) -> Unit
 ) {
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -267,7 +290,7 @@ fun PasoIngredientes(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "Ingredientes",
+                        texto("ingredientes"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -275,7 +298,7 @@ fun PasoIngredientes(
 
                     // Contador de ingredientes
                     Text(
-                        "Ingredientes añadidos: ${ingredientes.size}",
+                        "${texto("ingredientes_anadidos")}: ${ingredientes.size}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -290,8 +313,8 @@ fun PasoIngredientes(
                         OutlinedTextField(
                             value = nuevoNombre,
                             onValueChange = onNombreChange,
-                            label = { Text("Nombre del ingrediente *") },
-                            placeholder = { Text("Ej: Harina de trigo") },
+                            label = { Text("${texto("nombre_ingrediente")} *") },
+                            placeholder = { Text(texto("ej_ingrediente")) },
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -303,8 +326,8 @@ fun PasoIngredientes(
                             OutlinedTextField(
                                 value = nuevoCantidad,
                                 onValueChange = onCantidadChange,
-                                label = { Text("Cantidad *") },
-                                placeholder = { Text("Ej: 200") },
+                                label = { Text("${texto("cantidad")} *") },
+                                placeholder = { Text(texto("ej_cantidad")) },
                                 modifier = Modifier.weight(1f)
                             )
 
@@ -315,9 +338,9 @@ fun PasoIngredientes(
                             modifier = Modifier.fillMaxWidth(),
                             enabled = nuevoNombre.isNotBlank() && nuevoCantidad.isNotBlank()
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Añadir")
+                            Icon(Icons.Default.Add, contentDescription = texto("anadir"))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Añadir Ingrediente")
+                            Text(texto("agregar_ingrediente"))
                         }
                     }
                 }
@@ -365,7 +388,7 @@ fun PasoIngredientes(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Eliminar ingrediente",
+                                contentDescription = texto("eliminar_ingrediente"),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -385,12 +408,12 @@ fun PasoIngredientes(
                     ) {
                         Icon(
                             Icons.Default.List,
-                            contentDescription = "Sin ingredientes",
+                            contentDescription = texto("sin_ingredientes"),
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "Añade los ingredientes de tu receta",
+                            texto("anade_ingredientes_receta"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -402,12 +425,17 @@ fun PasoIngredientes(
 
 @Composable
 fun PasoPreparacion(
+    textosTraducidos: Map<String, String>,
     pasos: List<String>,
     nuevoPaso: String,
     onPasoChange: (String) -> Unit,
     onAddPaso: () -> Unit,
     onRemovePaso: (String) -> Unit
 ) {
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -420,7 +448,7 @@ fun PasoPreparacion(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        "Pasos de Preparación",
+                        texto("pasos_preparacion"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -428,7 +456,7 @@ fun PasoPreparacion(
 
                     // Contador de pasos
                     Text(
-                        "Pasos añadidos: ${pasos.size}",
+                        "${texto("pasos_anadidos")}: ${pasos.size}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -442,8 +470,8 @@ fun PasoPreparacion(
                         OutlinedTextField(
                             value = nuevoPaso,
                             onValueChange = onPasoChange,
-                            label = { Text("Nuevo paso") },
-                            placeholder = { Text("Ej: Precalentar el horno a 180°C") },
+                            label = { Text(texto("nuevo_paso")) },
+                            placeholder = { Text(texto("ej_paso")) },
                             modifier = Modifier.weight(1f),
                             singleLine = true
                         )
@@ -454,7 +482,7 @@ fun PasoPreparacion(
                             onClick = onAddPaso,
                             enabled = nuevoPaso.isNotBlank()
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Añadir paso")
+                            Icon(Icons.Default.Add, contentDescription = texto("anadir_paso"))
                         }
                     }
                 }
@@ -512,7 +540,7 @@ fun PasoPreparacion(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Eliminar paso",
+                                contentDescription = texto("eliminar_paso"),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -532,12 +560,12 @@ fun PasoPreparacion(
                     ) {
                         Icon(
                             Icons.Default.List,
-                            contentDescription = "Sin pasos",
+                            contentDescription = texto("sin_pasos"),
                             modifier = Modifier.size(48.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            "Añade los pasos de preparación",
+                            texto("anade_pasos_preparacion"),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -549,6 +577,7 @@ fun PasoPreparacion(
 
 @Composable
 fun PasoFinal(
+    textosTraducidos: Map<String, String>,
     categoria: String,
     imagenUrl: String,
     onCategoriaChange: (String) -> Unit,
@@ -558,6 +587,10 @@ fun PasoFinal(
     ingredientesCount: Int,
     pasosCount: Int
 ) {
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
     val scrollState = rememberScrollState()
 
     Column(
@@ -572,7 +605,7 @@ fun PasoFinal(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    "Categoría e Imagen",
+                    texto("categoria_imagen"),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -581,8 +614,8 @@ fun PasoFinal(
                 OutlinedTextField(
                     value = categoria,
                     onValueChange = onCategoriaChange,
-                    label = { Text("Categoría *") },
-                    placeholder = { Text("Ej: Cena, Postre, Ensalada, Pizza") },
+                    label = { Text("${texto("categoria")} *") },
+                    placeholder = { Text(texto("ej_categoria")) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = categoria.isEmpty(),
                     trailingIcon = {
@@ -595,7 +628,7 @@ fun PasoFinal(
                             ) {
                                 Icon(
                                     Icons.Default.Refresh,
-                                    contentDescription = "Generar nueva imagen para esta categoría"
+                                    contentDescription = texto("generar_nueva_imagen")
                                 )
                             }
                         }
@@ -607,12 +640,12 @@ fun PasoFinal(
                 OutlinedTextField(
                     value = imagenUrl,
                     onValueChange = onImagenUrlChange,
-                    label = { Text("URL de la imagen *") },
-                    placeholder = { Text("Se generará automáticamente basado en la categoría") },
+                    label = { Text("${texto("imagen_url")} *") },
+                    placeholder = { Text(texto("url_automatica")) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = imagenUrl.isEmpty(),
                     supportingText = {
-                        Text("La URL se genera automáticamente basada en la categoría")
+                        Text(texto("url_generada_automaticamente"))
                     }
                 )
 
@@ -638,7 +671,7 @@ fun PasoFinal(
                     ) {
                         Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Imagen por categoría", fontSize = 12.sp)
+                        Text(texto("imagen_por_categoria"), fontSize = 12.sp)
                     }
 
                     // Botón para imagen aleatoria
@@ -653,13 +686,13 @@ fun PasoFinal(
                     ) {
                         Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Imagen aleatoria", fontSize = 12.sp)
+                        Text(texto("imagen_aleatoria"), fontSize = 12.sp)
                     }
                 }
 
                 // Sugerencias de categorías populares
                 Text(
-                    text = "Categorías populares:",
+                    text = texto("categorias_populares"),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
@@ -716,7 +749,7 @@ fun PasoFinal(
                 // Muestra la imagen actual como vista previa
                 if (imagenUrl.isNotEmpty()) {
                     Text(
-                        text = "Vista previa de la imagen:",
+                        text = texto("vista_previa_imagen"),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 16.dp)
@@ -731,7 +764,7 @@ fun PasoFinal(
                     ) {
                         AsyncImage(
                             model = imagenUrl,
-                            contentDescription = "Vista previa de imagen",
+                            contentDescription = texto("vista_previa_imagen"),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -746,17 +779,17 @@ fun PasoFinal(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    "Resumen",
+                    texto("resumen"),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                Text("Nombre: $nombre", fontWeight = FontWeight.Medium)
-                Text("Tiempo: $tiempo minutos")
-                Text("Ingredientes: $ingredientesCount")
-                Text("Pasos: $pasosCount")
-                Text("Categoría: $categoria")
+                Text("${texto("nombre")}: $nombre", fontWeight = FontWeight.Medium)
+                Text("${texto("tiempo")}: $tiempo ${texto("minutos")}")
+                Text("${texto("ingredientes")}: $ingredientesCount")
+                Text("${texto("pasos")}: $pasosCount")
+                Text("${texto("categoria")}: $categoria")
             }
         }
     }
@@ -766,9 +799,10 @@ fun PasoFinal(
 @Composable
 fun PreviewPantallaCrearReceta() {
     FastyRecipesTheme {
-        PantallaCrearReceta(
-            onGuardar = { _, _, _, _, _, _ -> },
-            onCancelar = {}
-        )
+        // PantallaCrearReceta(
+        //     viewModel = ...,
+        //     onGuardar = { _, _, _, _, _, _ -> },
+        //     onCancelar = {}
+        // )
     }
 }

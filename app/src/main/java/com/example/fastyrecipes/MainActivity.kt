@@ -4,17 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fastyrecipes.controller.FirebaseAuthController
 import com.example.fastyrecipes.controller.FirebaseController
@@ -57,9 +57,19 @@ fun AppNavigation(viewModel: RecetasViewModel) {
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
+    val context = LocalContext.current
+
+    // Estados para el diálogo de idioma
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
     var currentScreen by remember { mutableStateOf("cargando") }
     var selectedReceta by remember { mutableStateOf<Receta?>(null) }
     var authError by remember { mutableStateOf<String?>(null) }
+
+    // Cargar idioma guardado al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.cargarIdiomaGuardado(context)
+    }
 
     // Debug: Ver estados
     println("🔍 AppNavigation - currentScreen: $currentScreen")
@@ -119,10 +129,11 @@ fun AppNavigation(viewModel: RecetasViewModel) {
         "autenticacion" -> {
             println("👁️ Mostrando PantallaAutenticacion")
             PantallaAutenticacion(
+                viewModel = viewModel,
                 onIniciarSesion = { correo, contraseña ->
                     println("🔑 Iniciando sesión con: $correo")
                     authError = null // Limpiar errores anteriores
-                    viewModel.iniciarSesion(correo, contraseña)
+                    viewModel.iniciarSesion(correo, contraseña, context)
                     // NO navegar inmediatamente - esperar a que el ViewModel actualice el estado
                 },
                 onRegistrarse = { nombre, correo, contraseña ->
@@ -133,7 +144,7 @@ fun AppNavigation(viewModel: RecetasViewModel) {
                 },
                 onIniciarComoInvitado = {
                     println("👤 Iniciando como invitado")
-                    viewModel.iniciarComoInvitado()
+                    viewModel.iniciarComoInvitado(context)
                     // Para invitado, navegar inmediatamente
                     currentScreen = "inicio"
                 },
@@ -227,6 +238,9 @@ fun AppNavigation(viewModel: RecetasViewModel) {
 
         "perfil" -> {
             println("👁️ Mostrando PantallaPerfil")
+
+            val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
             PantallaPerfil(
                 viewModel = viewModel,
                 onBack = {
@@ -241,13 +255,28 @@ fun AppNavigation(viewModel: RecetasViewModel) {
                     println("🚪 Cerrando sesión")
                     viewModel.cerrarSesion()
                     currentScreen = "autenticacion"
+                },
+                onCambiarIdioma = {
+                    println("🌐 Usuario quiere cambiar idioma")
+                    showLanguageDialog = true
                 }
             )
+
+            // Mostrar diálogo de selección de idioma
+            if (showLanguageDialog) {
+                DialogoSeleccionIdioma(
+                    viewModel = viewModel,
+                    context = context,
+                    textosTraducidos = textosTraducidos,
+                    onDismiss = { showLanguageDialog = false }
+                )
+            }
         }
 
         "crearReceta" -> {
             println("👁️ Mostrando PantallaCrearReceta")
             PantallaCrearReceta(
+                viewModel = viewModel,
                 onGuardar = { nombre, tiempo, ingredientes, pasos, categoria, imagenUrl ->
                     println("💾 Guardando receta: $nombre")
                     viewModel.agregarReceta(
@@ -271,6 +300,7 @@ fun AppNavigation(viewModel: RecetasViewModel) {
             println("👁️ Mostrando PantallaDetalleReceta")
             selectedReceta?.let { receta ->
                 PantallaDetalleReceta(
+                    viewModel = viewModel,
                     receta = receta,
                     onBack = {
                         println("↩️ Volviendo desde detalle")
@@ -287,4 +317,54 @@ fun AppNavigation(viewModel: RecetasViewModel) {
             }
         }
     }
+}
+
+@Composable
+fun DialogoSeleccionIdioma(
+    viewModel: RecetasViewModel,
+    context: android.content.Context,
+    textosTraducidos: Map<String, String>,
+    onDismiss: () -> Unit
+) {
+    val idiomasDisponibles by viewModel.idiomasDisponibles.collectAsStateWithLifecycle()
+    val idiomaActual by viewModel.idiomaActual.collectAsStateWithLifecycle()
+
+    // Función helper
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(texto("seleccionar_idioma")) },
+        text = {
+            Column {
+                idiomasDisponibles.forEach { (nombre, codigo) ->
+                    ListItem(
+                        headlineContent = {
+                            Text(nombre)
+                        },
+                        trailingContent = {
+                            if (idiomaActual == nombre) {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = "Seleccionado"
+                                )
+                            }
+                        },
+                        modifier = Modifier
+                            .clickable {
+                                viewModel.cambiarIdioma(nombre, context)
+                                onDismiss()
+                            }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text(texto("cerrar"))
+            }
+        }
+    )
 }

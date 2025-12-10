@@ -30,26 +30,31 @@ fun PantallaFavoritos(
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit,
-    onNavigateToDetalleReceta: (Receta) -> Unit  // NUEVO PARÁMETRO
+    onNavigateToDetalleReceta: (Receta) -> Unit
 ) {
 
     val recetasFavoritas by viewModel.recetasFavoritas.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Tus Favoritos",
+                        texto("mis_favoritas"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = texto("volver"))
                     }
                 },
                 actions = {
@@ -99,7 +104,7 @@ fun PantallaFavoritos(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Cargando tus favoritos...",
+                            texto("cargando_favoritos"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -118,20 +123,20 @@ fun PantallaFavoritos(
                         ) {
                             Icon(
                                 Icons.Default.FavoriteBorder,
-                                contentDescription = "Sin favoritos",
+                                contentDescription = texto("no_hay_favoritos"),
                                 modifier = Modifier.size(96.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(
-                                "No tienes recetas favoritas",
+                                texto("no_hay_favoritos"),
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                "Agrega recetas a favoritos para verlas aquí",
+                                texto("agregar_recetas_favoritos"),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
@@ -143,7 +148,7 @@ fun PantallaFavoritos(
                                 )
                             ) {
                                 Text(
-                                    "Explorar Recetas",
+                                    texto("explorar_recetas"),
                                     style = MaterialTheme.typography.labelLarge
                                 )
                             }
@@ -155,14 +160,14 @@ fun PantallaFavoritos(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "Tus recetas favoritas",
+                            text = texto("tus_recetas_favoritas"),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "${recetasFavoritas.size} recetas guardadas",
+                            text = "${recetasFavoritas.size} ${texto("recetas_guardadas")}",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -179,7 +184,7 @@ fun PantallaFavoritos(
                             RecetaItemFavoritos(
                                 receta = receta,
                                 onToggleFavorito = { viewModel.toggleFavorito(receta) },
-                                onVerDetalle = { onNavigateToDetalleReceta(receta) }  // NUEVO
+                                onVerDetalle = { onNavigateToDetalleReceta(receta) }
                             )
                         }
                     }
@@ -196,17 +201,17 @@ fun PantallaFavoritos(
     }
 }
 
-// Componente específico para favoritos - MODIFICADO
+// Componente específico para favoritos
 @Composable
 fun RecetaItemFavoritos(
     receta: Receta,
     onToggleFavorito: () -> Unit,
-    onVerDetalle: () -> Unit  // NUEVO PARÁMETRO
+    onVerDetalle: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onVerDetalle() },  // HACE CLICKABLE TODA LA TARJETA
+            .clickable { onVerDetalle() },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),

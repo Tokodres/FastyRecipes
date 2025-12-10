@@ -35,26 +35,34 @@ fun PantallaPerfil(
     onNavigateToSearch: () -> Unit,
     onNavigateToFavoritos: () -> Unit,
     onNavigateToPerfil: () -> Unit,
-    onCerrarSesion: () -> Unit
+    onCerrarSesion: () -> Unit,
+    onCambiarIdioma: () -> Unit
 ) {
 
     val usuarioActual by viewModel.usuarioActual.collectAsStateWithLifecycle()
     val recetas by viewModel.recetas.collectAsStateWithLifecycle()
     val esInvitado by viewModel.esInvitado.collectAsStateWithLifecycle()
+    val idiomaActual by viewModel.idiomaActual.collectAsStateWithLifecycle()
+    val textosTraducidos by viewModel.textosTraducidos.collectAsStateWithLifecycle()
+
+    // Función helper para obtener texto traducido
+    fun texto(key: String): String {
+        return textosTraducidos[key] ?: key
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Mi Perfil",
+                        texto("mi_perfil"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Default.ArrowBack, contentDescription = texto("volver"))
                     }
                 }
             )
@@ -84,19 +92,19 @@ fun PantallaPerfil(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            Icons.Default.Person, // CAMBIADO: PersonOutline no existe en Icons.Default
+                            Icons.Default.Person,
                             contentDescription = "Invitado",
                             modifier = Modifier.size(64.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Estás usando la aplicación como invitado",
+                            texto("invitado_mensaje1"),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Inicia sesión para guardar tus recetas y preferencias",
+                            texto("invitado_mensaje2"),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -104,7 +112,7 @@ fun PantallaPerfil(
                         Button(
                             onClick = onCerrarSesion
                         ) {
-                            Text("Iniciar Sesión")
+                            Text(texto("iniciar_sesion"))
                         }
                     }
                 }
@@ -132,7 +140,7 @@ fun PantallaPerfil(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         if (usuario.fotoPerfil.isNotEmpty()) {
-                                            AsyncImage( // CORREGIDO: Importado correctamente
+                                            AsyncImage(
                                                 model = usuario.fotoPerfil,
                                                 contentDescription = "Foto de perfil",
                                                 modifier = Modifier.fillMaxSize()
@@ -160,7 +168,7 @@ fun PantallaPerfil(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "Miembro desde: ${formatearFecha(usuario.fechaRegistro)}",
+                                        text = "${texto("miembro_desde")}${formatearFecha(usuario.fechaRegistro)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -178,7 +186,7 @@ fun PantallaPerfil(
                                     modifier = Modifier.padding(16.dp)
                                 ) {
                                     Text(
-                                        text = "Mis Estadísticas",
+                                        text = texto("mis_estadisticas"),
                                         style = MaterialTheme.typography.titleLarge,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(bottom = 16.dp)
@@ -198,7 +206,7 @@ fun PantallaPerfil(
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                             Text(
-                                                text = "Recetas",
+                                                text = texto("recetas"),
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         }
@@ -216,7 +224,7 @@ fun PantallaPerfil(
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                             Text(
-                                                text = "Favoritas",
+                                                text = texto("favoritas"),
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         }
@@ -231,7 +239,7 @@ fun PantallaPerfil(
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                             Text(
-                                                text = "Búsquedas",
+                                                text = texto("busquedas"),
                                                 style = MaterialTheme.typography.bodySmall
                                             )
                                         }
@@ -249,40 +257,68 @@ fun PantallaPerfil(
                                 Column(
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 ) {
+                                    // Título de la sección (sin acción)
                                     ListItem(
-                                        headlineContent = { Text("Configuración de la cuenta") },
+                                        headlineContent = { Text(texto("configuracion_cuenta")) },
                                         leadingContent = {
                                             Icon(
-                                                Icons.Default.Settings, // CAMBIADO
-                                                contentDescription = "Configuración"
+                                                Icons.Default.Settings,
+                                                contentDescription = texto("configuracion")
                                             )
                                         }
                                     )
 
                                     Divider()
 
+                                    // Opción: Cambiar idioma
                                     ListItem(
-                                        headlineContent = { Text("Cambiar contraseña") },
+                                        headlineContent = {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(texto("idioma"))
+                                                Text(
+                                                    text = idiomaActual,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontSize = 14.sp
+                                                )
+                                            }
+                                        },
                                         leadingContent = {
                                             Icon(
-                                                Icons.Default.Lock, // CAMBIADO
-                                                contentDescription = "Contraseña"
+                                                Icons.Default.Language,
+                                                contentDescription = texto("idioma")
                                             )
                                         },
-                                        modifier = Modifier.clickable { /* Cambiar contraseña */ } // CORREGIDO
+                                        modifier = Modifier.clickable { onCambiarIdioma() }
                                     )
 
                                     Divider()
 
                                     ListItem(
-                                        headlineContent = { Text("Notificaciones") },
+                                        headlineContent = { Text(texto("cambiar_contrasena")) },
                                         leadingContent = {
                                             Icon(
-                                                Icons.Default.Notifications, // CAMBIADO
-                                                contentDescription = "Notificaciones"
+                                                Icons.Default.Lock,
+                                                contentDescription = texto("contrasena")
                                             )
                                         },
-                                        modifier = Modifier.clickable { /* Configurar notificaciones */ } // CORREGIDO
+                                        modifier = Modifier.clickable { /* Cambiar contraseña */ }
+                                    )
+
+                                    Divider()
+
+                                    ListItem(
+                                        headlineContent = { Text(texto("notificaciones")) },
+                                        leadingContent = {
+                                            Icon(
+                                                Icons.Default.Notifications,
+                                                contentDescription = texto("notificaciones")
+                                            )
+                                        },
+                                        modifier = Modifier.clickable { /* Configurar notificaciones */ }
                                     )
 
                                     Divider()
@@ -290,18 +326,18 @@ fun PantallaPerfil(
                                     ListItem(
                                         headlineContent = {
                                             Text(
-                                                "Cerrar Sesión",
+                                                texto("cerrar_sesion"),
                                                 color = MaterialTheme.colorScheme.error
                                             )
                                         },
                                         leadingContent = {
                                             Icon(
-                                                Icons.Default.Logout, // CAMBIADO
-                                                contentDescription = "Cerrar sesión",
+                                                Icons.Default.Logout,
+                                                contentDescription = texto("cerrar_sesion"),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         },
-                                        modifier = Modifier.clickable { onCerrarSesion() } // CORREGIDO
+                                        modifier = Modifier.clickable { onCerrarSesion() }
                                     )
                                 }
                             }
@@ -331,41 +367,8 @@ fun PreviewPantallaPerfil() {
         //     onNavigateToSearch = {},
         //     onNavigateToFavoritos = {},
         //     onNavigateToPerfil = {},
-        //     onCerrarSesion = {}
+        //     onCerrarSesion = {},
+        //     onCambiarIdioma = {}
         // )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewUsuarioCard() {
-    FastyRecipesTheme {
-        val usuarioEjemplo = Usuario(
-            id = "1",
-            nombre = "Chef María",
-            correo = "maria@cocina.com",
-            recetasGuardadas = listOf("receta1", "receta2"), // CORREGIDO
-            historialBusquedas = listOf("pollo", "postres") // CORREGIDO
-        )
-
-        // UsuarioCard ya no existe en este archivo
-        // Comentar o eliminar esta llamada
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewUsuarioCardInactivo() {
-    FastyRecipesTheme {
-        val usuarioEjemplo = Usuario(
-            id = "1",
-            nombre = "Chef María",
-            correo = "maria@cocina.com",
-            recetasGuardadas = listOf("receta1", "receta2"), // CORREGIDO
-            historialBusquedas = listOf("pollo", "postres") // CORREGIDO
-        )
-
-        // UsuarioCard ya no existe en este archivo
-        // Comentar o eliminar esta llamada
     }
 }

@@ -1,5 +1,7 @@
 package com.example.fastyrecipes.viewmodels
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fastyrecipes.controller.FirebaseAuthController
@@ -21,14 +23,29 @@ class RecetasViewModel(
     private val _usuarioActual = MutableStateFlow<Usuario?>(null)
     val usuarioActual: StateFlow<Usuario?> = _usuarioActual.asStateFlow()
 
-    private val _estaAutenticado = MutableStateFlow<Boolean?>(null)  // Cambiar a nullable
+    private val _estaAutenticado = MutableStateFlow<Boolean?>(null)
     val estaAutenticado: StateFlow<Boolean?> = _estaAutenticado.asStateFlow()
 
     private val _esInvitado = MutableStateFlow(false)
     val esInvitado: StateFlow<Boolean> = _esInvitado.asStateFlow()
 
+    // ========== ESTADO DE IDIOMA ==========
+    private val _idiomaActual = MutableStateFlow("Español")
+    val idiomaActual: StateFlow<String> = _idiomaActual.asStateFlow()
+
+    private val _idiomasDisponibles = MutableStateFlow(
+        listOf(
+            "Español" to "es",
+            "English" to "en"
+        )
+    )
+    val idiomasDisponibles: StateFlow<List<Pair<String, String>>> = _idiomasDisponibles.asStateFlow()
+
+    // ========== TEXTO TRADUCIDO ==========
+    private val _textosTraducidos = MutableStateFlow<Map<String, String>>(emptyMap())
+    val textosTraducidos: StateFlow<Map<String, String>> = _textosTraducidos.asStateFlow()
+
     // ========== ESTADOS DE RECETAS ==========
-    // Flow que observa cambios en tiempo real de Firebase Firestore
     val recetas = firebaseController.obtenerTodasLasRecetas()
         .stateIn(
             scope = viewModelScope,
@@ -36,21 +53,18 @@ class RecetasViewModel(
             initialValue = emptyList()
         )
 
-    // Estados de carga y error
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    // Estados para búsqueda y filtros
     private val _searchText = MutableStateFlow("")
     val searchText: StateFlow<String> = _searchText.asStateFlow()
 
     private val _selectedCategory = MutableStateFlow<String?>(null)
     val selectedCategory: StateFlow<String?> = _selectedCategory.asStateFlow()
 
-    // Recetas filtradas por búsqueda y categoría
     val recetasFiltradas: StateFlow<List<Receta>> = combine(
         recetas,
         _searchText,
@@ -72,7 +86,6 @@ class RecetasViewModel(
         initialValue = emptyList()
     )
 
-    // Categorías únicas
     val categoriasUnicas: StateFlow<List<String>> = recetas.map { recetas ->
         recetas.map { it.categoria }.distinct()
     }.stateIn(
@@ -81,19 +94,16 @@ class RecetasViewModel(
         initialValue = emptyList()
     )
 
-    // Recetas favoritas del usuario actual
     val recetasFavoritas: StateFlow<List<Receta>> = combine(
         recetas,
         _usuarioActual,
         _esInvitado
     ) { recetas, usuario, esInvitado ->
         if (!esInvitado && usuario != null) {
-            // Si está autenticado, usar sus favoritos
             recetas.filter { receta ->
                 usuario.recetasGuardadas.contains(receta.id)
             }
         } else {
-            // Si es invitado, usar el campo esFavorita local
             recetas.filter { it.esFavorita }
         }
     }.stateIn(
@@ -106,6 +116,7 @@ class RecetasViewModel(
         println("🟢 RecetasViewModel - Inicializando...")
         verificarAutenticacionInicial()
         cargarDatosIniciales()
+        // Cargaremos el idioma cuando tengamos contexto en MainActivity
     }
 
     private fun verificarAutenticacionInicial() {
@@ -114,14 +125,11 @@ class RecetasViewModel(
             _isLoading.value = true
 
             try {
-                // Usar Firebase Auth real para verificar
                 val usuarioFirebase = firebaseAuthController.obtenerUsuarioActual()
 
                 if (usuarioFirebase != null) {
-                    // Usuario autenticado con Firebase Auth
                     println("👤 RecetasViewModel - Usuario Firebase encontrado: ${usuarioFirebase.correo}")
 
-                    // Obtener datos completos de Firestore
                     val usuarioCompleto = try {
                         firebaseAuthController.obtenerUsuario(usuarioFirebase.id)
                     } catch (e: Exception) {
@@ -134,7 +142,6 @@ class RecetasViewModel(
                     _esInvitado.value = false
                     println("✅ RecetasViewModel - Usuario autenticado: ${usuarioCompleto?.nombre}")
                 } else {
-                    // No hay usuario autenticado
                     println("👤 RecetasViewModel - No hay usuario autenticado")
                     _estaAutenticado.value = false
                     _esInvitado.value = false
@@ -149,7 +156,6 @@ class RecetasViewModel(
 
             } finally {
                 _isLoading.value = false
-                println("🔵 RecetasViewModel - Estado final: estaAutenticado=${_estaAutenticado.value}")
             }
         }
     }
@@ -167,6 +173,380 @@ class RecetasViewModel(
         }
     }
 
+    // ========== FUNCIONES DE IDIOMA ==========
+
+    fun cambiarIdioma(nombreIdioma: String, context: Context) {
+        viewModelScope.launch {
+            try {
+                println("🌐 RecetasViewModel - Cambiando idioma a: $nombreIdioma")
+
+                // Actualizar el estado del idioma actual
+                _idiomaActual.value = nombreIdioma
+
+                // Cargar traducciones para el nuevo idioma
+                cargarTraducciones(nombreIdioma)
+
+                // Guardar en SharedPreferences
+                val sharedPref = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                sharedPref.edit()
+                    .putString("idioma", if (nombreIdioma == "English") "en" else "es")
+                    .apply()
+                println("💾 Idioma guardado en SharedPreferences: $nombreIdioma")
+
+                // Si el usuario está autenticado, guardar en Firestore
+                if (!_esInvitado.value) {
+                    val usuario = _usuarioActual.value
+                    if (usuario != null) {
+                        try {
+                            val idiomaCodigo = if (nombreIdioma == "English") "en" else "es"
+                            firebaseAuthController.guardarIdiomaUsuario(usuario.id, idiomaCodigo)
+                            println("📝 Idioma guardado para usuario: ${usuario.nombre}")
+
+                            // Actualizar usuario local
+                            val usuarioActualizado = usuario.copy(idiomaPreferido = idiomaCodigo)
+                            _usuarioActual.value = usuarioActualizado
+                        } catch (e: Exception) {
+                            println("⚠️ Error guardando idioma en Firestore: ${e.message}")
+                        }
+                    }
+                }
+
+                _error.value = null
+
+            } catch (e: Exception) {
+                println("❌ RecetasViewModel - Error cambiando idioma: ${e.message}")
+                _error.value = "Error cambiando idioma: ${e.message}"
+            }
+        }
+    }
+
+    fun cargarIdiomaGuardado(context: Context) {
+        viewModelScope.launch {
+            try {
+                val sharedPref = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                val codigoIdioma = sharedPref.getString("idioma", "es") ?: "es"
+
+                // Convertir código a nombre
+                val nombreIdioma = if (codigoIdioma == "en") "English" else "Español"
+
+                // Actualizar estado
+                _idiomaActual.value = nombreIdioma
+
+                // Cargar traducciones
+                cargarTraducciones(nombreIdioma)
+
+                println("🌐 Idioma cargado: $nombreIdioma ($codigoIdioma)")
+
+            } catch (e: Exception) {
+                println("⚠️ Error cargando idioma: ${e.message}")
+                _idiomaActual.value = "Español"
+                cargarTraducciones("Español")
+            }
+        }
+    }
+
+    private fun cargarTraducciones(idioma: String) {
+        val traducciones = when (idioma) {
+            "English" -> mapOf(
+                // Textos generales
+                "app_name" to "FastyRecipes",
+                "app_slogan" to "Discover and share delicious recipes",
+                "cerrar" to "Close",
+                "guardar" to "Save",
+                "cancelar" to "Cancel",
+                "volver" to "Back",
+                "siguiente" to "Next",
+                "buscar" to "Search",
+                "filtro" to "Filter",
+                "cargando" to "Loading",
+                "mostrar_contraseña" to "Show password",
+                "terminos_condiciones" to "By signing in you accept our Terms and Conditions",
+
+                // Navegación
+                "inicio" to "Home",
+                "favoritos" to "Favorites",
+                "perfil" to "Profile",
+
+                // Pantalla Principal
+                "titulo_recetas" to "Recipes",
+                "todas_las_categorias" to "All Categories",
+                "sin_recetas" to "No recipes available",
+                "agrega_recetas_comenzar" to "Add some recipes to get started",
+                "crear_receta" to "Create Recipe",
+                "ver_detalle" to "View Details",
+                "tienes_recetas" to "You have %d recipes",
+                "recargar_datos" to "Reload Data",
+                "recargar" to "Reload",
+
+                // Pantalla Búsqueda
+                "buscar_recetas" to "Search Recipes",
+                "placeholder_buscar" to "Search by name or ingredient...",
+                "resultados_busqueda" to "Search Results",
+                "sin_resultados" to "No results found",
+                "categoria" to "Category",
+                "categorias" to "Categories",
+                "resultados" to "Results",
+                "para_busqueda" to "for \"%s\"",
+
+                // Pantalla Favoritos
+                "mis_favoritas" to "My Favorites",
+                "no_hay_favoritos" to "No favorites yet",
+                "agregar_recetas_favoritos" to "Add recipes to favorites to see them here",
+                "eliminar_favoritos" to "Remove All Favorites",
+                "confirmar_eliminar_favoritos" to "Remove all favorites?",
+                "si" to "Yes",
+                "no" to "No",
+                "cargando_favoritos" to "Loading your favorites...",
+                "explorar_recetas" to "Explore Recipes",
+                "tus_recetas_favoritas" to "Your favorite recipes",
+                "recetas_guardadas" to "recipes saved",
+
+                // Pantalla Perfil
+                "mi_perfil" to "My Profile",
+                "mis_estadisticas" to "My Statistics",
+                "recetas" to "Recipes",
+                "favoritas" to "Favorites",
+                "busquedas" to "Searches",
+                "configuracion_cuenta" to "Account Settings",
+                "configuracion" to "Settings",
+                "cambiar_contrasena" to "Change Password",
+                "contrasena" to "Password",
+                "notificaciones" to "Notifications",
+                "cerrar_sesion" to "Sign Out",
+                "seleccionar_idioma" to "Select Language",
+                "idioma" to "Language",
+                "invitado_mensaje1" to "You are using the app as guest",
+                "invitado_mensaje2" to "Sign in to save your recipes and preferences",
+                "iniciar_sesion" to "Sign In",
+                "miembro_desde" to "Member since: ",
+
+                // Pantalla Crear Receta
+                "crear_nueva_receta" to "Create New Recipe",
+                "crear_receta" to "Create Recipe",
+                "nombre_receta" to "Recipe Name",
+                "descripcion" to "Description",
+                "tiempo_preparacion" to "Preparation Time (minutes)",
+                "ingredientes" to "Ingredients",
+                "pasos" to "Steps",
+                "imagen_url" to "Image URL",
+                "agregar_ingrediente" to "Add Ingredient",
+                "agregar_paso" to "Add Step",
+                "nombre_ingrediente" to "Ingredient Name",
+                "cantidad" to "Quantity",
+                "texto_paso" to "Step Description",
+                "requerido" to "Required",
+                "guardar_receta" to "Save Recipe",
+                "paso" to "Step",
+                "informacion_basica" to "Basic Information",
+                "ej_nombre_receta" to "Ex: Baked chicken with potatoes",
+                "ej_tiempo" to "Ex: 60",
+                "ingredientes_anadidos" to "Ingredients added",
+                "anadir" to "Add",
+                "ej_ingrediente" to "Ex: Wheat flour",
+                "ej_cantidad" to "Ex: 200",
+                "eliminar_ingrediente" to "Delete ingredient",
+                "sin_ingredientes" to "No ingredients",
+                "anade_ingredientes_receta" to "Add your recipe ingredients",
+                "pasos_preparacion" to "Preparation Steps",
+                "pasos_anadidos" to "Steps added",
+                "nuevo_paso" to "New step",
+                "ej_paso" to "Ex: Preheat oven to 180°C",
+                "anadir_paso" to "Add step",
+                "eliminar_paso" to "Delete step",
+                "sin_pasos" to "No steps",
+                "anade_pasos_preparacion" to "Add preparation steps",
+                "categoria_imagen" to "Category and Image",
+                "generar_nueva_imagen" to "Generate new image for this category",
+                "url_automatica" to "Will be generated automatically based on category",
+                "url_generada_automaticamente" to "URL is automatically generated based on category",
+                "imagen_por_categoria" to "Image by category",
+                "imagen_aleatoria" to "Random image",
+                "categorias_populares" to "Popular categories:",
+                "vista_previa_imagen" to "Image preview",
+                "resumen" to "Summary",
+                "nombre" to "Name",
+                "tiempo" to "Time",
+                "minutos" to "minutes",
+
+                // Pantalla Detalle Receta
+                "detalle_receta" to "Recipe Details",
+                "agregar_favoritos" to "Add to Favorites",
+                "quitar_favoritos" to "Remove from Favorites",
+                "preparacion" to "Preparation",
+                "sin_ingredientes" to "No ingredients specified",
+                "sin_pasos_preparacion" to "No preparation steps available",
+
+                // Pantalla Autenticación
+                "autenticacion" to "Authentication",
+                "iniciar_sesion_titulo" to "Sign In",
+                "registrarse_titulo" to "Sign Up",
+                "correo_electronico" to "Email",
+                "contraseña" to "Password",
+                "nombre_usuario" to "Name",
+                "confirmar_contraseña" to "Confirm Password",
+                "iniciar_como_invitado" to "Continue as Guest",
+                "no_tienes_cuenta" to "Don't have an account?",
+                "ya_tienes_cuenta" to "Already have an account?",
+                "registrate_aqui" to "Sign up here",
+                "inicia_sesion_aqui" to "Sign in here",
+                "error_credenciales" to "Invalid credentials",
+                "error_registro" to "Registration error",
+                "exito_registro" to "Registration successful"
+            )
+            else -> mapOf( // Español por defecto
+                // Textos generales
+                "app_name" to "FastyRecipes",
+                "app_slogan" to "Descubre y comparte recetas deliciosas",
+                "cerrar" to "Cerrar",
+                "guardar" to "Guardar",
+                "cancelar" to "Cancelar",
+                "volver" to "Volver",
+                "siguiente" to "Siguiente",
+                "buscar" to "Buscar",
+                "filtro" to "Filtrar",
+                "cargando" to "Cargando",
+                "mostrar_contraseña" to "Mostrar contraseña",
+                "terminos_condiciones" to "Al iniciar sesión aceptas nuestros Términos y Condiciones",
+
+                // Navegación
+                "inicio" to "Inicio",
+                "favoritos" to "Favoritos",
+                "perfil" to "Perfil",
+
+                // Pantalla Principal
+                "titulo_recetas" to "Recetas",
+                "todas_las_categorias" to "Todas las categorías",
+                "sin_recetas" to "No hay recetas disponibles",
+                "agrega_recetas_comenzar" to "Agrega algunas recetas para comenzar",
+                "crear_receta" to "Crear Receta",
+                "ver_detalle" to "Ver Detalles",
+                "tienes_recetas" to "Tienes %d recetas",
+                "recargar_datos" to "Recargar Datos",
+                "recargar" to "Recargar",
+
+                // Pantalla Búsqueda
+                "buscar_recetas" to "Buscar Recetas",
+                "placeholder_buscar" to "Buscar por nombre o ingrediente...",
+                "resultados_busqueda" to "Resultados de búsqueda",
+                "sin_resultados" to "No se encontraron resultados",
+                "categoria" to "Categoría",
+                "categorias" to "Categorías",
+                "resultados" to "Resultados",
+                "para_busqueda" to "para \"%s\"",
+
+                // Pantalla Favoritos
+                "mis_favoritas" to "Mis Favoritas",
+                "no_hay_favoritos" to "No hay favoritos aún",
+                "agregar_recetas_favoritos" to "Agrega recetas a favoritos para verlas aquí",
+                "eliminar_favoritos" to "Eliminar Todos los Favoritos",
+                "confirmar_eliminar_favoritos" to "¿Eliminar todos los favoritos?",
+                "si" to "Sí",
+                "no" to "No",
+                "cargando_favoritos" to "Cargando tus favoritos...",
+                "explorar_recetas" to "Explorar Recetas",
+                "tus_recetas_favoritas" to "Tus recetas favoritas",
+                "recetas_guardadas" to "recetas guardadas",
+
+                // Pantalla Perfil
+                "mi_perfil" to "Mi Perfil",
+                "mis_estadisticas" to "Mis Estadísticas",
+                "recetas" to "Recetas",
+                "favoritas" to "Favoritas",
+                "busquedas" to "Búsquedas",
+                "configuracion_cuenta" to "Configuración de la cuenta",
+                "configuracion" to "Configuración",
+                "cambiar_contrasena" to "Cambiar contraseña",
+                "contrasena" to "Contraseña",
+                "notificaciones" to "Notificaciones",
+                "cerrar_sesion" to "Cerrar Sesión",
+                "seleccionar_idioma" to "Seleccionar idioma",
+                "idioma" to "Idioma",
+                "invitado_mensaje1" to "Estás usando la aplicación como invitado",
+                "invitado_mensaje2" to "Inicia sesión para guardar tus recetas y preferencias",
+                "iniciar_sesion" to "Iniciar Sesión",
+                "miembro_desde" to "Miembro desde: ",
+
+                // Pantalla Crear Receta
+                "crear_nueva_receta" to "Crear Nueva Receta",
+                "crear_receta" to "Crear Receta",
+                "nombre_receta" to "Nombre de la Receta",
+                "descripcion" to "Descripción",
+                "tiempo_preparacion" to "Tiempo de Preparación (minutos)",
+                "ingredientes" to "Ingredientes",
+                "pasos" to "Pasos",
+                "imagen_url" to "URL de la Imagen",
+                "agregar_ingrediente" to "Agregar Ingrediente",
+                "agregar_paso" to "Agregar Paso",
+                "nombre_ingrediente" to "Nombre del Ingrediente",
+                "cantidad" to "Cantidad",
+                "texto_paso" to "Descripción del Paso",
+                "requerido" to "Requerido",
+                "guardar_receta" to "Guardar Receta",
+                "paso" to "Paso",
+                "informacion_basica" to "Información Básica",
+                "ej_nombre_receta" to "Ej: Pollo al horno con patatas",
+                "ej_tiempo" to "Ej: 60",
+                "ingredientes_anadidos" to "Ingredientes añadidos",
+                "anadir" to "Añadir",
+                "ej_ingrediente" to "Ej: Harina de trigo",
+                "ej_cantidad" to "Ej: 200",
+                "eliminar_ingrediente" to "Eliminar ingrediente",
+                "sin_ingredientes" to "Sin ingredientes",
+                "anade_ingredientes_receta" to "Añade los ingredientes de tu receta",
+                "pasos_preparacion" to "Pasos de Preparación",
+                "pasos_anadidos" to "Pasos añadidos",
+                "nuevo_paso" to "Nuevo paso",
+                "ej_paso" to "Ej: Precalentar el horno a 180°C",
+                "anadir_paso" to "Añadir paso",
+                "eliminar_paso" to "Eliminar paso",
+                "sin_pasos" to "Sin pasos",
+                "anade_pasos_preparacion" to "Añade los pasos de preparación",
+                "categoria_imagen" to "Categoría e Imagen",
+                "generar_nueva_imagen" to "Generar nueva imagen para esta categoría",
+                "url_automatica" to "Se generará automáticamente basado en la categoría",
+                "url_generada_automaticamente" to "La URL se genera automáticamente basada en la categoría",
+                "imagen_por_categoria" to "Imagen por categoría",
+                "imagen_aleatoria" to "Imagen aleatoria",
+                "categorias_populares" to "Categorías populares:",
+                "vista_previa_imagen" to "Vista previa de la imagen",
+                "resumen" to "Resumen",
+                "nombre" to "Nombre",
+                "tiempo" to "Tiempo",
+
+                // Pantalla Detalle Receta
+                "detalle_receta" to "Detalles de la Receta",
+                "agregar_favoritos" to "Agregar a Favoritos",
+                "quitar_favoritos" to "Quitar de Favoritos",
+                "preparacion" to "Preparación",
+                "sin_ingredientes" to "No se especificaron ingredientes",
+                "sin_pasos_preparacion" to "No hay pasos de preparación disponibles",
+
+                // Pantalla Autenticación
+                "autenticacion" to "Autenticación",
+                "iniciar_sesion_titulo" to "Iniciar Sesión",
+                "registrarse_titulo" to "Registrarse",
+                "correo_electronico" to "Correo Electrónico",
+                "contraseña" to "Contraseña",
+                "nombre_usuario" to "Nombre",
+                "confirmar_contraseña" to "Confirmar Contraseña",
+                "iniciar_como_invitado" to "Continuar como Invitado",
+                "no_tienes_cuenta" to "¿No tienes una cuenta?",
+                "ya_tienes_cuenta" to "¿Ya tienes una cuenta?",
+                "registrate_aqui" to "Regístrate aquí",
+                "inicia_sesion_aqui" to "Inicia sesión aquí",
+                "error_credenciales" to "Credenciales inválidas",
+                "error_registro" to "Error en el registro",
+                "exito_registro" to "Registro exitoso"
+            )
+        }
+        _textosTraducidos.value = traducciones
+    }
+
+    // Función para obtener texto traducido (opcional, se puede usar en lugar de la función local en Composable)
+    fun obtenerTexto(key: String): String {
+        return _textosTraducidos.value[key] ?: key
+    }
+
     // ========== FUNCIONES DE AUTENTICACIÓN ==========
 
     fun registrarUsuario(nombre: String, correo: String, contraseña: String) {
@@ -176,7 +556,6 @@ class RecetasViewModel(
                 _isLoading.value = true
                 _error.value = null
 
-                // Usar Firebase Auth real
                 val resultado = firebaseAuthController.registrarUsuario(correo, contraseña, nombre)
 
                 if (resultado.isSuccess) {
@@ -186,6 +565,8 @@ class RecetasViewModel(
                     _estaAutenticado.value = true
                     _esInvitado.value = false
                     _error.value = null
+                    _idiomaActual.value = "Español"
+
                 } else {
                     val errorMsg = resultado.exceptionOrNull()?.message ?: "Error desconocido"
                     println("❌ RecetasViewModel - Error al registrar: $errorMsg")
@@ -201,14 +582,13 @@ class RecetasViewModel(
         }
     }
 
-    fun iniciarSesion(correo: String, contraseña: String) {
+    fun iniciarSesion(correo: String, contraseña: String, context: Context) {
         viewModelScope.launch {
             try {
                 println("🔑 RecetasViewModel - Iniciando sesión para: $correo")
                 _isLoading.value = true
-                _error.value = null  // Limpiar errores anteriores
+                _error.value = null
 
-                // Usar Firebase Auth real
                 val resultado = firebaseAuthController.iniciarSesion(correo, contraseña)
 
                 if (resultado.isSuccess) {
@@ -217,7 +597,11 @@ class RecetasViewModel(
                     _usuarioActual.value = usuario
                     _estaAutenticado.value = true
                     _esInvitado.value = false
-                    _error.value = null  // Asegurar que no hay error
+                    _error.value = null
+
+                    // Cargar idioma guardado
+                    cargarIdiomaGuardado(context)
+
                 } else {
                     val errorMsg = resultado.exceptionOrNull()?.message ?: "Credenciales incorrectas"
                     println("❌ RecetasViewModel - Error al iniciar sesión: $errorMsg")
@@ -233,7 +617,7 @@ class RecetasViewModel(
         }
     }
 
-    fun iniciarComoInvitado() {
+    fun iniciarComoInvitado(context: Context) {
         println("👤 RecetasViewModel - Iniciando como invitado")
         _usuarioActual.value = Usuario(
             id = "invitado_${System.currentTimeMillis()}",
@@ -242,11 +626,16 @@ class RecetasViewModel(
             contraseña = "",
             fechaRegistro = System.currentTimeMillis(),
             recetasGuardadas = emptyList(),
-            historialBusquedas = emptyList()
+            historialBusquedas = emptyList(),
+            fotoPerfil = "",
+            idiomaPreferido = "es"
         )
-        _estaAutenticado.value = true  // Para navegación, está "autenticado" como invitado
+        _estaAutenticado.value = true
         _esInvitado.value = true
         _error.value = null
+
+        // Cargar idioma guardado
+        cargarIdiomaGuardado(context)
     }
 
     fun cerrarSesion() {
@@ -301,10 +690,8 @@ class RecetasViewModel(
         viewModelScope.launch {
             try {
                 if (_esInvitado.value) {
-                    // Para invitados: cambiar el estado localmente
                     firebaseController.marcarComoFavorita(receta.id, !receta.esFavorita)
                 } else {
-                    // Para usuarios autenticados: actualizar en su perfil
                     val usuario = _usuarioActual.value
                     if (usuario != null) {
                         val nuevasRecetasGuardadas = if (usuario.recetasGuardadas.contains(receta.id)) {
@@ -330,7 +717,6 @@ class RecetasViewModel(
         viewModelScope.launch {
             try {
                 if (_esInvitado.value) {
-                    // Para invitados: desmarcar todas como favoritas
                     val todasRecetas = recetas.value
                     todasRecetas.forEach { receta ->
                         if (receta.esFavorita) {
@@ -338,7 +724,6 @@ class RecetasViewModel(
                         }
                     }
                 } else {
-                    // Para usuarios autenticados: limpiar su lista de favoritos
                     val usuario = _usuarioActual.value
                     if (usuario != null) {
                         val usuarioActualizado = usuario.copy(recetasGuardadas = emptyList())
